@@ -18,10 +18,12 @@ Perform a review and write a report to `docs/reports/`.
    - documentation drift
 4. Record findings in a report using [template.md](template.md).
 5. Separate blocking issues from follow-up suggestions.
-6. If there are no findings, say what was checked and what evidence supports that conclusion.
+6. If any finding represents deferred work, known shortcuts, or accumulated complexity, append it to `docs/tech-debt/README.md` or create a dedicated file in `docs/tech-debt/` with: debt item, impact, why deferred, trigger for paying it down, and related plan or report.
+7. If there are no findings, say what was checked and what evidence supports that conclusion.
 
 ## Output
 
 - `docs/reports/review-<date>-<slug>.md`
 - severity-tagged findings
 - merge or no-merge recommendation
+- tech-debt entries in `docs/tech-debt/` if deferred work was identified

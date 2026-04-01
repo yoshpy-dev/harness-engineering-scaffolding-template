@@ -4,6 +4,7 @@
 - Plan:
 - Verifier:
 - Scope:
+- Evidence: `docs/evidence/verify-<date>-<slug>.log`
 
 ## Deterministic checks run
 

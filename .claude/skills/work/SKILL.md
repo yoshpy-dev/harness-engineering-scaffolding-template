@@ -15,6 +15,24 @@ Work from the active plan, not from memory alone.
 6. If repeated failures occur, reduce scope, inspect evidence, and revise the plan instead of thrashing.
 7. Keep docs, contracts, and tests aligned with behavior changes.
 8. Before presenting completion, run `/review` and `/verify` or equivalent deterministic checks.
+9. After all acceptance criteria are met and verification passes, archive the plan with `./scripts/archive-plan.sh <slug>`.
+
+## Completion gate
+
+Do NOT present a task as complete unless ALL of the following are true:
+
+- [ ] `./scripts/run-verify.sh` exits 0 (or a project-specific verifier passes)
+- [ ] A verify report exists in `docs/reports/`
+- [ ] Raw evidence is saved in `docs/evidence/`
+- [ ] A review report exists in `docs/reports/` (or was explicitly deemed unnecessary for docs-only changes)
+- [ ] The active plan's progress checklist is fully updated
+- [ ] Any discovered tech debt is recorded in `docs/tech-debt/`
+
+If verification has not run, say so explicitly instead of claiming done.
+
+## Anti-bottleneck
+
+Before asking the user for confirmation, next steps, or choices, first check whether you can resolve the question through verification, repo context, subagents, or reasonable defaults. See the `anti-bottleneck` skill for the full checklist.
 
 ## Strong defaults
 

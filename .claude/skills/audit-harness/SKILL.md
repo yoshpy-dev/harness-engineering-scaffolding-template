@@ -25,6 +25,17 @@ Audit the harness, not the product code alone.
 - Are reports and plans actually helping, or only adding ceremony?
 - Is the harness complexity still justified by the current task and model quality?
 
+## Quality gate alignment
+
+Check whether `docs/quality/` still matches reality:
+
+- Does `docs/quality/definition-of-done.md` reflect the actual completion workflow? Compare against `/work`, `/review`, and `/verify` skill steps.
+- Does `docs/quality/quality-gates.md` list the verifiers and CI checks that actually exist in `scripts/` and `.github/workflows/`?
+- Are there new verification tools, linters, or test frameworks in use that are not mentioned in the quality gates?
+- Are there gates listed that no longer apply or have been removed?
+
+If drift is found, update the quality docs or flag them in the audit memo.
+
 ## Output
 
 Write a short audit memo with:
