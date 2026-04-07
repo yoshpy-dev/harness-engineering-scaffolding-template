@@ -28,6 +28,8 @@ Use these in CI or later-stage review:
 
 ### Must pass in CI before merge
 
+- `./scripts/run-verify.sh` (`.github/workflows/verify.yml`)
+- `./scripts/check-template.sh` (`.github/workflows/check-template.yml`)
 - broader test coverage
 - static analysis beyond the inner loop
 - any org or repo-specific policy checks

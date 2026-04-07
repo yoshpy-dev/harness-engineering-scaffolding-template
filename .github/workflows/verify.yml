@@ -1,0 +1,12 @@
+name: verify
+on:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Bootstrap harness
+        run: ./scripts/bootstrap.sh
+      - name: Run verification
+        run: ./scripts/run-verify.sh
