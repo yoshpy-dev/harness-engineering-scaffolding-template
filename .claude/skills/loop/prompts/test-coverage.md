@@ -28,26 +28,36 @@ Then run `git status` and `git log --oneline -5` to understand the current state
 
 Each iteration must:
 1. Identify ONE module, function, or code path that lacks coverage
-2. Write tests for it, including at least one edge case
-3. Run all tests to confirm they pass (new and existing)
-4. Append a summary to `.harness/state/loop/progress.log`:
+2. Read `.harness/state/loop/phase-state.json` to understand previous phase results
+3. **Implement**: Write tests for it, including at least one edge case
+4. **Self-review**: Read your diff (`git diff`) and check for copy-paste errors,
+   weak assertions, missing edge cases, and test naming clarity.
+5. **Verify**: Run `./scripts/run-static-verify.sh` to lint the test files.
+6. **Test**: Run `./scripts/run-test.sh` to confirm all tests pass (new and existing).
+7. Update `.harness/state/loop/phase-state.json` with phase results
+8. Append a summary to `.harness/state/loop/progress.log`:
    ```
    ## Iteration N — <timestamp>
    - What: <tests added for which module/function>
    - Edge cases: <what edge cases were covered>
-   - Tests pass: <yes/no>
+   - Implement: pass
+   - Self-review: pass (fixed: <brief note> / clean)
+   - Verify: pass/fail
+   - Test: pass/fail
    - Coverage delta: <if measurable>
+   - Result: <pass if all four pass, fail otherwise>
    - Next: <next area to cover>
    ```
-5. Commit with message format: `test: add coverage for <area>`
+9. Commit with message format: `test: add coverage for <area>`
 
 ## Completion rules
 
-When coverage target is met (or all identified gaps are addressed) AND all tests pass:
+When coverage target is met (or all identified gaps are addressed) AND all four phases pass:
 1. Write a final summary with coverage report to progress.log
-2. Output exactly: `<promise>COMPLETE</promise>`
+2. Update phase-state.json with `"quality_cycle_complete": true`
+3. Output exactly: `<promise>COMPLETE</promise>`
 
-Do NOT output COMPLETE if any test is failing.
+Do NOT output COMPLETE if any phase is failing.
 
 ## Abort rules
 

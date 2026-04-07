@@ -27,26 +27,36 @@ Then run `git status` and `git log --oneline -5` to understand the current state
 
 Each iteration must:
 1. Pick ONE refactoring step (extract, rename, move, simplify, deduplicate)
-2. Run tests before the change to confirm green baseline
-3. Apply the refactoring
-4. Run tests after to confirm green
-5. Append a summary to `.harness/state/loop/progress.log`:
+2. Read `.harness/state/loop/phase-state.json` to understand previous phase results
+3. Run tests before the change to confirm green baseline
+4. **Implement**: Apply the refactoring
+5. **Self-review**: Read your diff (`git diff`) and verify no behaviour change.
+   Check for naming issues, unnecessary changes, and structural regressions.
+6. **Verify**: Run `./scripts/run-static-verify.sh`. If it fails, fix and re-run.
+7. **Test**: Run `./scripts/run-test.sh` to confirm green after the change.
+   If tests fail, revert and try differently.
+8. Update `.harness/state/loop/phase-state.json` with phase results
+9. Append a summary to `.harness/state/loop/progress.log`:
    ```
    ## Iteration N — <timestamp>
    - What: <refactoring applied>
-   - Tests before: <pass/fail>
-   - Tests after: <pass/fail>
+   - Implement: pass
+   - Self-review: pass (no behaviour change confirmed)
+   - Verify: pass/fail
+   - Test: pass/fail (before: <pass/fail>, after: <pass/fail>)
+   - Result: <pass if all four pass, fail otherwise>
    - Next: <next refactoring step>
    ```
-6. Commit with message format: `refactor: <description>`
+10. Commit with message format: `refactor: <description>`
 
 ## Completion rules
 
-When ALL planned refactoring steps are done AND tests pass:
+When ALL planned refactoring steps are done AND all four phases pass:
 1. Write a final summary to progress.log
-2. Output exactly: `<promise>COMPLETE</promise>`
+2. Update phase-state.json with `"quality_cycle_complete": true`
+3. Output exactly: `<promise>COMPLETE</promise>`
 
-Do NOT output COMPLETE if any test is failing.
+Do NOT output COMPLETE if any phase is failing.
 
 ## Abort rules
 

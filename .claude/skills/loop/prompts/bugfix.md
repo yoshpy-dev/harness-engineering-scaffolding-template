@@ -36,34 +36,46 @@ The first 2 iterations MUST focus on diagnosis and reproduction:
 
 Each iteration must:
 1. Pick ONE diagnostic step or ONE fix attempt
-2. Execute it
-3. Append a summary to `.harness/state/loop/progress.log`:
+2. Read `.harness/state/loop/phase-state.json` to understand previous phase results
+3. **Implement**: Execute the diagnostic step or apply the fix
+4. **Self-review**: Read your diff (`git diff`) and check for:
+   - Diagnosis iterations: did you actually isolate the root cause?
+   - Fix iterations: is the fix minimal and targeted? Any side effects?
+5. **Verify**: Run `./scripts/run-static-verify.sh`. If it fails, fix and re-run.
+6. **Test**: Run `./scripts/run-test.sh`. Confirm reproduction test + full suite.
+7. Update `.harness/state/loop/phase-state.json` with phase results
+8. Append a summary to `.harness/state/loop/progress.log`:
    ```
    ## Iteration N — <timestamp>
    - Phase: <diagnose/fix>
    - What: <what was done>
    - Finding: <what was learned>
-   - Tests: <pass/fail, which ones>
+   - Implement: pass
+   - Self-review: pass (fixed: <brief note> / clean)
+   - Verify: pass/fail
+   - Test: pass/fail (<which tests>)
+   - Result: <pass if all four pass, fail otherwise>
    - Next: <next step>
    ```
-4. Commit with message format:
+9. Commit with message format:
    - Diagnosis: `test: add reproduction test for <bug>`
    - Fix: `fix: <description of the fix>`
 
 ## Completion rules
 
-When the bug is fixed AND:
+When the bug is fixed AND all four phases pass AND:
 - The reproduction test passes
 - The full test suite passes
 - No regressions detected
 
 Then:
 1. Write a root cause analysis to progress.log
-2. Output exactly: `<promise>COMPLETE</promise>`
+2. Update phase-state.json with `"quality_cycle_complete": true`
+3. Output exactly: `<promise>COMPLETE</promise>`
 
 Do NOT output COMPLETE if:
 - No reproduction test exists
-- Any test is failing
+- Any phase (self-review, verify, or test) is failing
 - The fix is a workaround without understanding the root cause
 
 ## Abort rules

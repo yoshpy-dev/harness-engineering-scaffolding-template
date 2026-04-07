@@ -28,27 +28,43 @@ Then run `git status` and `git log --oneline -5` to understand the current state
 
 Each iteration must:
 1. Pick ONE document or section to create or update
-2. Read the relevant source code to verify accuracy
-3. Write or update the documentation
-4. Cross-check any commands or code snippets actually work
-5. Append a summary to `.harness/state/loop/progress.log`:
+2. Read `.harness/state/loop/phase-state.json` to understand previous phase results
+3. **Implement**: Read the relevant source code and write or update the documentation
+4. **Self-review**: Read your diff (`git diff`) and check for:
+   - Accuracy against source code
+   - Invented APIs or features that do not exist
+   - Broken links or references to non-existent files
+   - Prose clarity and conciseness
+5. **Verify**: Run `./scripts/run-static-verify.sh` to check for lint issues.
+   Cross-check any commands or code snippets actually work.
+6. **Test**: Run `./scripts/run-test.sh` to confirm no regressions.
+   (Docs changes rarely break tests, but verify anyway.)
+7. Update `.harness/state/loop/phase-state.json` with phase results
+8. Append a summary to `.harness/state/loop/progress.log`:
    ```
    ## Iteration N — <timestamp>
    - What: <document or section updated>
    - Verified against: <source files checked>
+   - Implement: pass
+   - Self-review: pass (fixed: <brief note> / clean)
+   - Verify: pass/fail
+   - Test: pass/fail
+   - Result: <pass if all four pass, fail otherwise>
    - Next: <next document or section>
    ```
-6. Commit with message format: `docs: <description>`
+9. Commit with message format: `docs: <description>`
 
 ## Completion rules
 
-When all planned documentation updates are done AND verified against source:
+When all planned documentation updates are done AND all four phases pass:
 1. Write a final summary listing all docs updated
-2. Output exactly: `<promise>COMPLETE</promise>`
+2. Update phase-state.json with `"quality_cycle_complete": true`
+3. Output exactly: `<promise>COMPLETE</promise>`
 
 Do NOT output COMPLETE if:
 - Any documented commands have not been verified
 - Documentation references non-existent files or features
+- Any phase is failing
 
 ## Abort rules
 

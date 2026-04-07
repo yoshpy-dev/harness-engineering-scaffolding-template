@@ -8,6 +8,7 @@ Set up a Ralph Loop for autonomous iteration outside Claude Code.
 ## Goals
 
 - Turn a task into a self-contained loop that runs `cat PROMPT.md | claude -p` repeatedly
+- Each iteration runs a quality cycle: implement → self-review → verify → test
 - Choose the right prompt template for the task type
 - Leave the user ready to start the loop from their terminal
 
@@ -72,9 +73,12 @@ Read the generated `.harness/state/loop/PROMPT.md` and display its contents. The
 
 After approval, print the run command:
 ```sh
-./scripts/ralph-loop.sh                          # basic
-./scripts/ralph-loop.sh --verify                  # with verification
-./scripts/ralph-loop.sh --verify --max-iterations 10  # bounded
+./scripts/ralph-loop.sh                                    # quality cycle on (default)
+./scripts/ralph-loop.sh --no-quality-cycle                  # implement only, no review/verify/test
+./scripts/ralph-loop.sh --max-iterations 10                 # bounded iterations
+./scripts/ralph-loop.sh --max-cost 5.00                     # budget limit in USD
+./scripts/ralph-loop.sh --allowed-tools "Read,Write,Edit,Bash,Grep,Glob"  # restrict tools
+./scripts/ralph-loop.sh --progress-keep 10                  # keep last N iterations in progress.log
 ```
 
 ## Output
@@ -82,16 +86,19 @@ After approval, print the run command:
 - `.harness/state/loop/PROMPT.md` ready to run
 - `.harness/state/loop/task.json` with metadata
 - `.harness/state/loop/progress.log` initialized
+- `.harness/state/loop/phase-state.json` for quality cycle tracking
+- `.harness/state/loop/progress-archive.log` for trimmed iterations
 - Worktree path at `.claude/worktrees/<slug>` (if created)
 - Terminal command for the user to start the loop
 
 ## After the loop
 
 When the user returns after running the loop:
-1. Read `.harness/state/loop/status` to check outcome
+1. Read `.harness/state/loop/status` to check outcome (complete, aborted, stuck, max_iterations, cost_limit)
 2. Read `.harness/state/loop/progress.log` for what happened
-3. Suggest `/review` and `/verify` to validate the results
-4. If a worktree was created, ask the user whether to keep or remove it (`git worktree remove .claude/worktrees/<slug>`)
+3. Read `.harness/state/loop/phase-state.json` for quality cycle results and token usage
+4. Suggest `/review` and `/verify` to validate the results
+5. If a worktree was created, ask the user whether to keep or remove it (`git worktree remove .claude/worktrees/<slug>`)
 
 ## Anti-bottleneck
 
@@ -99,6 +106,7 @@ When presenting AskUserQuestion choices, always pre-select or recommend the most
 
 ## Additional resources
 
+- [prompts/quality-cycle.md](prompts/quality-cycle.md) — quality cycle contract reference
 - [prompts/general.md](prompts/general.md)
 - [prompts/refactor.md](prompts/refactor.md)
 - [prompts/test-coverage.md](prompts/test-coverage.md)

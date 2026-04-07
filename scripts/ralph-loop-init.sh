@@ -115,6 +115,27 @@ echo "0" > "${LOOP_DIR}/stuck.count"
 # Initialize status
 echo "pending" > "${LOOP_DIR}/status"
 
+# Initialize phase state for quality cycle tracking
+cat > "${LOOP_DIR}/phase-state.json" <<EOF
+{
+  "current_iteration": 0,
+  "phase": "pending",
+  "last_results": {
+    "implement": null,
+    "review": null,
+    "verify": null,
+    "test": null
+  },
+  "quality_cycle_complete": false,
+  "total_tokens": 0
+}
+EOF
+
+echo "Created ${LOOP_DIR}/phase-state.json"
+
+# Initialize progress archive for log trimming
+touch "${LOOP_DIR}/progress-archive.log"
+
 echo ""
 echo "Ralph Loop initialized."
 echo "  Type:      ${task_type}"

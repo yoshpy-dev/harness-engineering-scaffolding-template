@@ -21,7 +21,7 @@ Build coding-agent workflows that are:
 
 1. Explore
 2. Plan (manual — creates plan, selects flow)
-3. Work (auto — creates branch) or Loop (auto — creates worktree)
+3. Work (auto — creates branch) or Loop (auto — creates worktree, quality cycle per iteration) or Swarm (auto — parallel loops across worktrees)
 4. Self-review (auto — diff quality)
 5. Verify (auto — spec compliance + static analysis)
 6. Test (auto — behavioral tests)
@@ -48,6 +48,7 @@ Build coding-agent workflows that are:
 - `packs/languages/` — language-specific depth
 - `scripts/` — reusable verification and bootstrap scripts
 - `.harness/state/` — runtime state, not canonical truth
+- `.harness/state/swarm/` — parallel swarm orchestration state
 
 ## Planning contract
 

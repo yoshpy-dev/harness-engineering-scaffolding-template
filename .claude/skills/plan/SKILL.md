@@ -36,12 +36,15 @@ Create or update a plan in `docs/plans/active/`.
 5. Keep the plan high-level enough to avoid cascading low-level mistakes.
 6. End with a short readiness checklist.
 7. **Flow selection**: Use **AskUserQuestion** to ask the user which execution flow to use.
-   - Question: "どちらの開発フローで進めますか？"
+   - Question: "どの開発フローで進めますか？"
    - Options:
      1. **標準フロー (/work)** — Claude Code 内で対話的に実装を進める（短〜中規模タスク向け）
      2. **Ralph Loop (/loop)** — ターミナルで自律反復実行する（大規模・持続的自律作業向け）
+     3. **並列ループ (/swarm)** — 複数の Ralph Loop を並列実行する（独立スライスに分解可能な大規模作業向け）
    - If the plan mentions large-scale refactoring, migration, test-coverage campaigns, or multi-file autonomous work, recommend Ralph Loop.
+   - If the plan has multiple independent features or modules that can be worked on in parallel with clear file ownership boundaries, recommend 並列ループ.
    - Otherwise, recommend 標準フロー.
+   - If /swarm is chosen, ensure the plan uses the swarm-plan template with slice decomposition.
    - After the user chooses, state which flow will be used next and proceed accordingly.
 
 ## Output
