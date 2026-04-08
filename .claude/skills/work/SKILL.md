@@ -29,7 +29,8 @@ Work from the active plan, not from memory alone.
    a. `Task(subagent_type="reviewer")` → `/self-review` — stop if CRITICAL findings
    b. `Task(subagent_type="verifier")` → `/verify` — stop if fail verdict
    c. `Task(subagent_type="tester")` → `/test` — stop if fail verdict
-   d. `/codex-review` (optional, inline) → `/pr`
+   d. `Task(subagent_type="doc-maintainer")` → `/sync-docs`
+   e. `/codex-review` (optional, inline) → `/pr`
 
 ## Scope discipline
 

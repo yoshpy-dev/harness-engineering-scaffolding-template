@@ -94,7 +94,8 @@ When the user returns after running the loop:
    a. `Task(subagent_type="reviewer")` → `/self-review` — stop if CRITICAL findings
    b. `Task(subagent_type="verifier")` → `/verify` — stop if fail verdict
    c. `Task(subagent_type="tester")` → `/test` — stop if fail verdict
-   d. `/codex-review` (optional, inline) → `/pr`
+   d. `Task(subagent_type="doc-maintainer")` → `/sync-docs`
+   e. `/codex-review` (optional, inline) → `/pr`
 4. If a worktree was created, ask the user whether to keep or remove it (`git worktree remove .claude/worktrees/<slug>`)
 
 ## Anti-bottleneck

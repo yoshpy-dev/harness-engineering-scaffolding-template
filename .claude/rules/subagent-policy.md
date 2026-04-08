@@ -34,12 +34,22 @@ Task(subagent_type="tester", prompt="Run /test against plan <slug>")
 
 If a subagent fails to execute (tool error, not a review finding), run the corresponding skill inline and note the fallback in the report.
 
-## Other subagents
+## Planning — always inline
 
-| Subagent | Trigger |
-|----------|---------|
-| `planner` | When `/plan` benefits from context isolation (large codebases, deep research). Optional — inline is also acceptable. |
-| `doc-maintainer` | When `/sync-docs` is invoked and context is already crowded. Optional — inline is also acceptable. |
+`/plan` runs in the main context (not via the `planner` subagent) because it relies heavily on `AskUserQuestion` for user interaction (task type selection, objective confirmation, flow selection, Codex advisory response). Subagent execution would add indirection to these conversations without meaningful benefit.
+
+The `planner` agent definition remains available for edge cases (e.g., delegating plan research to a subagent while working on something else), but the default is inline.
+
+## Documentation sync — always delegate
+
+After implementation and before PR creation, run `/sync-docs` via the `doc-maintainer` subagent:
+
+```
+Task(subagent_type="doc-maintainer", prompt="Run /sync-docs after <slug> implementation")
+  → doc-maintainer updates docs, rules, and reports as needed
+```
+
+This runs after the test step and before `/pr`, producing documentation updates as a separate concern from implementation.
 
 ## Rationale
 
