@@ -1,4 +1,4 @@
-# harness-scaffolding-template
+# harness-engineering-scaffolding-template
 
 A language-agnostic scaffold for practicing harness engineering with **Claude Code first** and **cross-vendor portability second**.
 
