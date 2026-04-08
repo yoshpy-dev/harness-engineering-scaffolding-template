@@ -18,7 +18,7 @@ Use this file only for Claude-specific guidance that must be always-on.
 - `/pr` creates the pull request, archives the plan, and completes the hand-off. A task is "done" when the PR is created.
 - Prefer `.claude/rules/` for topic or path-specific guidance.
 - Prefer `.claude/skills/` for workflows and reusable playbooks.
-- Use `planner`, `reviewer`, `verifier`, `tester`, and `doc-maintainer` subagents when they clearly reduce context pressure or improve auditability.
+- Post-implementation pipeline (`/self-review` → `/verify` → `/test`) always runs via subagents (`reviewer`, `verifier`, `tester`). See `.claude/rules/subagent-policy.md` for the full delegation policy.
 - Run `./scripts/run-verify.sh` or an equivalent deterministic check before claiming success.
 - If context is getting crowded, checkpoint progress in the active plan before compaction.
 - Keep this file small; if a rule grows, move it out.
