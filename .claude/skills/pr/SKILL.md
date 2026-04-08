@@ -25,7 +25,7 @@ If any pre-check fails, stop and explain what is missing.
    - **If uncommitted changes exist**: Stage with `git add` (prefer specific files over `-A`) and create a conventional commit: `<type>: <description>`. If a GitHub issue is linked, append `Refs #<number>` to the commit body.
    - **If working tree is clean** (intermediate commits already exist): Skip staging and committing — proceed directly to push.
 2. Push the branch: `git push -u origin HEAD`.
-3. Create the PR with `gh pr create` using [template.md](template.md) for the body structure.
+3. Create the PR with `gh pr create` using [template.md](template.md) for the body structure. **PR title and body must be written in Japanese.**
 4. For large diffs (>500 changed lines), create a walkthrough in `docs/reports/walkthrough-<date>-<slug>.md`.
 5. Archive the plan: `./scripts/archive-plan.sh <slug>`.
 
