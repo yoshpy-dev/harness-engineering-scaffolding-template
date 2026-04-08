@@ -35,7 +35,7 @@ case "$command" in
     emit_decision "ask" "Recursive delete requires explicit confirmation."
     ;;
   *"gh pr create"*)
-    emit_decision "deny" "Do not call 'gh pr create' directly. Use the /pr skill (Skill tool) instead — it enforces the Japanese PR template, pre-checks, and plan archiving."
+    emit_decision "ask" "gh pr create を検出。/pr スキル（Skill tool）経由で実行していますか？ /pr スキルは日本語テンプレート、事前チェック、プランアーカイブを強制します。直接実行は非推奨です。"
     ;;
 esac
 
