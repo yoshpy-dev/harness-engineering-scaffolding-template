@@ -2,18 +2,37 @@
 
 A task is done only when all applicable items are satisfied.
 
-## For non-trivial code changes
+## For non-trivial code changes (standard /work flow)
 
 - [ ] Active plan exists or was explicitly deemed unnecessary
 - [ ] Acceptance criteria were addressed
 - [ ] Each implementation slice is individually committed (see `.claude/rules/git-commit-strategy.md`)
-- [ ] Self-review artifact exists (diff quality)
-- [ ] Verification was run and recorded (spec compliance + static analysis)
-- [ ] Test artifact exists (behavioral tests pass)
-- [ ] Docs and contracts were updated if behavior changed
+- [ ] Self-review artifact exists in `docs/reports/` (diff quality)
+- [ ] Verification was run and recorded in `docs/reports/` (spec compliance + static analysis)
+- [ ] Test artifact exists in `docs/reports/` (behavioral tests pass)
+- [ ] Docs and contracts were updated if behavior changed (`/sync-docs`)
 - [ ] Remaining gaps are explicit
-- [ ] PR created via /pr skill (includes plan archival and hand-off)
+- [ ] PR created via `/pr` skill (includes plan archival and hand-off)
 - [ ] CI verify passes on the PR
+
+### Post-implementation pipeline order
+
+The full pipeline must run in this order — no steps may be skipped:
+
+```
+/self-review → /verify → /test → /sync-docs → /codex-review → /pr
+```
+
+If `/codex-review` finds ACTION_REQUIRED issues and the user chooses to fix them, the **full pipeline** re-runs from `/self-review` through `/codex-review` again. `/sync-docs` must not be skipped in the re-run.
+
+## For pipeline mode (/loop with `--pipeline`)
+
+- [ ] `./scripts/ralph status` shows `complete`
+- [ ] `.harness/state/pipeline/checkpoint.json` exists with `status: "complete"`
+- [ ] PR was automatically created by the pipeline
+- [ ] Plan archived from `docs/plans/active/` to `docs/plans/archive/`
+
+Pipeline mode handles the full lifecycle autonomously (implement → self-review → verify → test → sync-docs → codex-review → PR). Reports live in `.harness/state/pipeline/` rather than `docs/reports/`.
 
 ## For risky or broad changes
 
