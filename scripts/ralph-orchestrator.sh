@@ -21,12 +21,12 @@ UNIFIED_PR=0
 
 usage() {
   cat <<'USAGE'
-Usage: ralph-orchestrator.sh --plan <plan-file-or-directory> [OPTIONS]
+Usage: ralph-orchestrator.sh --plan <plan-directory> [OPTIONS]
 
 Multi-worktree parallel pipeline orchestrator for Ralph Loop.
 
 Options:
-  --plan <path>          Path to a plan file (inline slices) or plan directory (slice-*.md files) (required)
+  --plan <directory>     Path to a plan directory with _manifest.md + slice-*.md files (required)
   --max-parallel N       Max concurrent worktree pipelines (default: 4)
   --max-iterations N     Per-slice iteration cap passed to ralph-pipeline.sh (default: 20)
   --unified-pr           Create a single unified PR instead of per-slice PRs
@@ -50,12 +50,14 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$PLAN_FILE" ]; then
-  echo "Error: --plan <file-or-directory> is required"
+  echo "Error: --plan <directory> is required"
   usage
 fi
-if [ ! -f "$PLAN_FILE" ] && [ ! -d "$PLAN_FILE" ]; then
-  echo "Error: --plan target not found: ${PLAN_FILE}"
-  usage
+if [ ! -d "$PLAN_FILE" ]; then
+  echo "Error: --plan must be a directory-based plan (with _manifest.md + slice-*.md files)"
+  echo "  Got: ${PLAN_FILE}"
+  echo "  Create one with: ./scripts/new-ralph-plan.sh <slug> [issue] [slice-count]"
+  exit 1
 fi
 
 # ═══════════════════════════════════════════════════════════════════
@@ -71,26 +73,14 @@ log_error() { printf '[%s] ERROR: %s\n' "$(ts)" "$*" >&2; }
 # Plan parsing — extract slices from markdown
 # ═══════════════════════════════════════════════════════════════════
 
-# Parse slice definitions from the plan.
+# Parse slice definitions from a directory-based plan.
+# Input: path to a plan directory containing _manifest.md + slice-*.md files
 # Output: one line per slice: slug|objective|dependencies|affected_files|plan_file_path
-# Automatically detects input type:
-#   - Directory with slice-*.md files → parse_slices_directory()
-#   - Single markdown file with ### Slice N: headers → parse_slices_inline()
+#
+# Each slice file supports two field formats:
+#   1. Inline fields: "- Objective: ...", "- Dependencies: ...", "- Affected files: ..."
+#   2. Section headers: "## Objective", "## Dependencies", "## Affected files"
 parse_slices() {
-  _plan="$1"
-
-  if [ -d "$_plan" ]; then
-    parse_slices_directory "$_plan"
-  else
-    parse_slices_inline "$_plan"
-  fi
-}
-
-# Parse slices from a directory of slice-*.md files.
-# Supports two field formats per slice:
-#   1. Inline: "- Objective: ...", "- Dependencies: ...", "- Affected files: ..."
-#   2. Section headers: "## Objective" (next non-empty line), "## Dependencies", "## Affected files"
-parse_slices_directory() {
   _plan_dir="$1"
   _found=0
 
@@ -172,82 +162,12 @@ parse_slices_directory() {
   fi
 }
 
-# Parse slices from inline ### Slice N: headers in a single plan file (legacy)
-parse_slices_inline() {
-  _plan="$1"
-  _in_slice=0
-  _slug=""
-  _objective=""
-  _deps=""
-  _files=""
-
-  while IFS= read -r line; do
-    # Detect slice header: ### Slice N: <name>
-    case "$line" in
-      "### Slice "*)
-        # Emit previous slice if any
-        if [ -n "$_slug" ]; then
-          printf '%s|%s|%s|%s|%s\n' "$_slug" "$_objective" "$_deps" "$_files" "$_plan"
-        fi
-        # Extract slug from header (e.g., "### Slice 1: auth-module" -> "auth-module")
-        _raw_name="$(echo "$line" | sed 's/^### Slice [0-9]*: *//')"
-        _slug="$(echo "$_raw_name" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')"
-        _objective=""
-        _deps=""
-        _files=""
-        _in_slice=1
-        continue
-        ;;
-    esac
-
-    if [ "$_in_slice" -eq 1 ]; then
-      case "$line" in
-        "- Objective: "*)
-          _objective="$(echo "$line" | sed 's/^- Objective: *//')"
-          ;;
-        "- Dependencies: "*)
-          _raw_deps="$(echo "$line" | sed 's/^- Dependencies: *//')"
-          case "$_raw_deps" in
-            none|None|"") _deps="" ;;
-            *) _deps="$_raw_deps" ;;
-          esac
-          ;;
-        "- Affected files: "*)
-          _files="$(echo "$line" | sed 's/^- Affected files: *//' | tr -d '[]')"
-          ;;
-        "## "*)
-          # New top-level section — end slice parsing
-          if [ -n "$_slug" ]; then
-            printf '%s|%s|%s|%s|%s\n' "$_slug" "$_objective" "$_deps" "$_files" "$_plan"
-          fi
-          _in_slice=0
-          _slug=""
-          break
-          ;;
-        "### Shared-file locklist"*)
-          # Skip locklist header
-          ;;
-      esac
-    fi
-  done < "$_plan"
-
-  # Emit last slice
-  if [ -n "$_slug" ]; then
-    printf '%s|%s|%s|%s|%s\n' "$_slug" "$_objective" "$_deps" "$_files" "$_plan"
-  fi
-}
-
-# Parse shared-file locklist from the plan (dual-mode: directory or file)
+# Parse shared-file locklist from the plan directory (_manifest.md)
 parse_locklist() {
-  _plan="$1"
-
-  if [ -d "$_plan" ]; then
-    _manifest="${_plan}/_manifest.md"
-    if [ -f "$_manifest" ]; then
-      parse_locklist_from_file "$_manifest"
-    fi
-  else
-    parse_locklist_from_file "$_plan"
+  _plan_dir="$1"
+  _manifest="${_plan_dir}/_manifest.md"
+  if [ -f "$_manifest" ]; then
+    parse_locklist_from_file "$_manifest"
   fi
 }
 
@@ -354,21 +274,10 @@ create_integration_branch() {
 
 create_worktree() {
   _slug="$1"
-  # Use integration branch as base if UNIFIED_PR mode, otherwise current branch
-  if [ "$UNIFIED_PR" -eq 1 ] && [ -n "$INTEGRATION_BRANCH" ]; then
-    _base_branch="$INTEGRATION_BRANCH"
-  else
-    _base_branch="$(git rev-parse --abbrev-ref HEAD)"
-  fi
-
+  # Always use integration branch as base
+  _base_branch="${INTEGRATION_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
   _wt_path="${WORKTREE_BASE}/${_slug}"
-
-  # In unified PR mode, use slice/<plan-slug>/<name> branch naming
-  if [ "$UNIFIED_PR" -eq 1 ] && [ -n "$PLAN_SLUG" ]; then
-    _wt_branch="slice/${PLAN_SLUG}/${_slug}"
-  else
-    _wt_branch="slice/${_slug}"
-  fi
+  _wt_branch="slice/${PLAN_SLUG}/${_slug}"
 
   if [ -d "$_wt_path" ]; then
     log "Worktree already exists: ${_wt_path}"
@@ -497,54 +406,6 @@ wait_for_slice() {
   fi
 }
 
-# ═══════════════════════════════════════════════════════════════════
-# Integration merge check
-# ═══════════════════════════════════════════════════════════════════
-
-integration_merge_check() {
-  _base_branch="$(git rev-parse --abbrev-ref HEAD)"
-  _conflicts=0
-  _merge_branch="integration-check-$(ts_file)"
-
-  log "Running integration merge check..."
-
-  # Create a temporary merge branch
-  git checkout -b "$_merge_branch" "$_base_branch" 2>/dev/null || {
-    log_error "Failed to create merge check branch"
-    return 1
-  }
-
-  # Try merging each slice branch (use for loop to avoid pipe-subshell variable loss)
-  for status_file in "${ORCH_STATE}"/slice-*.status; do
-    [ -f "$status_file" ] || continue
-    _s="$(basename "$status_file" | sed 's/^slice-//;s/\.status$//')"
-    _status="$(cat "$status_file")"
-    if [ "$_status" = "complete" ]; then
-      _slice_branch="slice/${_s}"
-      log "Merging ${_slice_branch}..."
-      if ! git merge --no-commit --no-ff "$_slice_branch" 2>/dev/null; then
-        log_error "CONFLICT merging ${_slice_branch}"
-        git merge --abort 2>/dev/null || true
-        _conflicts=$((_conflicts + 1))
-      else
-        git reset --hard HEAD 2>/dev/null || true
-      fi
-    fi
-  done
-
-  # Clean up merge branch
-  git checkout "$_base_branch" 2>/dev/null || true
-  git branch -D "$_merge_branch" 2>/dev/null || true
-
-  if [ "$_conflicts" -gt 0 ]; then
-    log_error "Integration check found ${_conflicts} conflict(s). Manual resolution needed."
-    return 1
-  fi
-
-  log "Integration merge check passed"
-  return 0
-}
-
 # Sequential merge of completed slice branches into the integration branch.
 # Merges slices in file-order (which matches dependency order from parse_slices).
 # Aborts on first conflict.
@@ -574,12 +435,7 @@ integration_merge() {
       continue
     fi
 
-    # Determine the slice branch name
-    if [ -n "$PLAN_SLUG" ]; then
-      _slice_branch="slice/${PLAN_SLUG}/${s}"
-    else
-      _slice_branch="slice/${s}"
-    fi
+    _slice_branch="slice/${PLAN_SLUG}/${s}"
 
     log "Merging ${_slice_branch} into ${_int_branch}..."
     if ! git merge --no-ff "$_slice_branch" -m "$(cat <<MERGE_EOF
@@ -678,11 +534,10 @@ main() {
   PLAN_SLUG="$(extract_plan_slug "$PLAN_FILE")"
   _base_branch="$(git rev-parse --abbrev-ref HEAD)"
 
-  if [ "$UNIFIED_PR" -eq 1 ]; then
-    create_integration_branch "$PLAN_SLUG" "$_base_branch"
-    log "Integration branch: ${INTEGRATION_BRANCH}"
-    log ""
-  fi
+  # Always create an integration branch for sequential merge
+  create_integration_branch "$PLAN_SLUG" "$_base_branch"
+  log "Integration branch: ${INTEGRATION_BRANCH}"
+  log ""
 
   # --- Parse plan ---
   slices_data="$(parse_slices "$PLAN_FILE")"
@@ -702,14 +557,14 @@ main() {
   log "Found ${_slice_count} slice(s)"
 
   if [ "$_slice_count" -eq 0 ]; then
-    log_error "No slices found in plan. Ensure plan has '### Slice N: <name>' sections or is a directory with slice-*.md files."
+    log_error "No slices found in plan directory. Ensure directory contains slice-*.md files."
     exit 1
   fi
 
   log ""
   log "Slices:"
   echo "$slices_data" | while IFS='|' read -r s o d f p; do
-    log "  ${s}: ${o} (deps: ${d:-none}, plan: ${p:-inline})"
+    log "  ${s}: ${o} (deps: ${d:-none}, plan: ${p:-none})"
   done
   log ""
 
@@ -738,16 +593,10 @@ ORCH_JSON
 
   if [ "$DRY_RUN" -eq 1 ]; then
     log "[DRY RUN] Plan parsed successfully. Would create ${_slice_count} worktree(s)."
-    if [ "$UNIFIED_PR" -eq 1 ]; then
-      log "[DRY RUN] Integration branch: ${INTEGRATION_BRANCH}"
-    fi
+    log "[DRY RUN] Integration branch: ${INTEGRATION_BRANCH}"
+    log "[DRY RUN] Unified PR: $([ "$UNIFIED_PR" -eq 1 ] && echo "yes" || echo "no (merge only)")"
     echo "$slices_data" | while IFS='|' read -r s o d f p; do
-      if [ "$UNIFIED_PR" -eq 1 ] && [ -n "$PLAN_SLUG" ]; then
-        _br="slice/${PLAN_SLUG}/${s}"
-      else
-        _br="slice/${s}"
-      fi
-      log "[DRY RUN] Slice ${s}: worktree at ${WORKTREE_BASE}/${s}, branch ${_br}, plan: ${p:-inline}"
+      log "[DRY RUN] Slice ${s}: worktree at ${WORKTREE_BASE}/${s}, branch slice/${PLAN_SLUG}/${s}, plan: ${p:-none}"
     done
     return 0
   fi
@@ -857,29 +706,21 @@ ORCH_JSON
   _pr_url=""
 
   if [ "$_completed" -gt 0 ] && [ "$_failed" -eq 0 ]; then
-    if [ "$UNIFIED_PR" -eq 1 ] && [ -n "$INTEGRATION_BRANCH" ]; then
-      # Unified PR mode: sequential merge into integration branch, then create PR
-      if integration_merge "$INTEGRATION_BRANCH" "$_slices_file"; then
-        _merge_status="clean"
-        log "Sequential merge to ${INTEGRATION_BRANCH} passed."
-        # Create unified PR
+    # Sequential merge into integration branch, then create unified PR
+    if integration_merge "$INTEGRATION_BRANCH" "$_slices_file"; then
+      _merge_status="clean"
+      log "Sequential merge to ${INTEGRATION_BRANCH} passed."
+      if [ "$UNIFIED_PR" -eq 1 ]; then
         _pr_url="$(create_unified_pr "$INTEGRATION_BRANCH" "$_base_branch" "$PLAN_SLUG" "$_total" "$_completed")" || {
           log_error "Unified PR creation failed."
           _pr_url=""
         }
       else
-        _merge_status="conflict"
-        log_error "Sequential merge failed. Manual resolution needed on ${INTEGRATION_BRANCH}."
+        log "Skipping PR creation (--unified-pr not set). Merge to ${INTEGRATION_BRANCH} is ready."
       fi
     else
-      # Legacy mode: dry merge check only
-      if integration_merge_check; then
-        _merge_status="clean"
-        log "All slices complete with no merge conflicts."
-      else
-        _merge_status="conflict"
-        log_error "Merge conflicts detected. Manual resolution needed."
-      fi
+      _merge_status="conflict"
+      log_error "Sequential merge failed. Manual resolution needed on ${INTEGRATION_BRANCH}."
     fi
   fi
 

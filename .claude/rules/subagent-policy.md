@@ -66,15 +66,13 @@ The pipeline replaces the standard post-implementation subagent chain. When a us
 
 When running in orchestrator mode (`ralph-orchestrator.sh`), each slice gets its own worktree and runs `ralph-pipeline.sh` independently. No cross-slice subagent coordination is needed — each pipeline is self-contained.
 
-In `--unified-pr` mode, the orchestrator additionally:
+The orchestrator:
 1. Creates an integration branch (`integration/<slug>`)
 2. Bases each slice worktree on the integration branch
 3. Sequentially merges completed slices into the integration branch (dependency order)
-4. Creates a unified PR from the integration branch to the base branch
+4. Creates a unified PR from the integration branch to the base branch (with `--unified-pr`)
 
-Plan input supports two formats:
-- **Directory-based** (recommended for parallel slices): `docs/plans/active/<date>-<slug>/` with `_manifest.md` + `slice-*.md`
-- **Inline** (legacy): single markdown file with `### Slice N:` headers
+Plan input is directory-based only: `docs/plans/active/<date>-<slug>/` with `_manifest.md` + `slice-*.md`.
 
 ## Rationale
 

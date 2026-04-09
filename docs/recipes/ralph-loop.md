@@ -172,7 +172,7 @@ Pipeline mode extends the standard loop with a full Inner/Outer Loop architectur
 ./scripts/ralph run                             # auto-detect plan, run pipeline
 ./scripts/ralph run --preflight --dry-run       # validate setup first
 ./scripts/ralph run --max-iterations 15         # bounded pipeline
-./scripts/ralph run --slices --plan <plan-file> # multi-worktree parallel slices
+./scripts/ralph run --slices --plan <plan-directory> # multi-worktree parallel slices
 ./scripts/ralph status                          # check progress
 ./scripts/ralph abort                           # safely stop and archive state
 ```

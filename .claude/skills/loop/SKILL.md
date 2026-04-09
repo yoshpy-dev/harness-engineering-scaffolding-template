@@ -104,7 +104,7 @@ After approval, print the run command based on the selected mode:
 # Directory-based plan (auto-detects --slices mode)
 ./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --unified-pr
 # Explicit slices mode
-./scripts/ralph run --slices --plan <plan-file-or-dir> --unified-pr
+./scripts/ralph run --slices --plan <plan-directory> --unified-pr
 # Dry run to verify slice parsing
 ./scripts/ralph run --slices --plan <plan-dir> --dry-run
 ```

@@ -43,7 +43,7 @@ Build coding-agent workflows that are:
 
 - `docs/plans/active/` — current plans (single files or `<date>-<slug>/` directories with `_manifest.md` + `slice-*.md`)
 - `docs/plans/archive/` — completed plans
-- `docs/plans/templates/` — plan templates (`feature-plan.md`, `ralph-loop-plan.md`, `ralph-loop-manifest.md`, `ralph-loop-slice.md`)
+- `docs/plans/templates/` — plan templates (`feature-plan.md`, `ralph-loop-manifest.md`, `ralph-loop-slice.md`)
 - `docs/reports/` — self-review, verify, test, walkthrough artifacts
 - `docs/quality/` — definition of done and quality gates
 - `.claude/rules/` — path-scoped guidance

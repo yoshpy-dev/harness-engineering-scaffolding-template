@@ -51,7 +51,7 @@ Examples:
   ralph plan
   ralph run
   ralph run --plan docs/plans/active/my-plan.md --max-iterations 15
-  ralph run --slices --plan docs/plans/active/my-plan.md
+  ralph run --slices --plan docs/plans/active/2026-01-01-my-feature/
   ralph status
   ralph abort
 USAGE
