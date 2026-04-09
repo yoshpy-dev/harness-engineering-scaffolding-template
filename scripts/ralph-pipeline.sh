@@ -78,8 +78,8 @@ ckpt_update() {
   if [ ! -f "${PIPELINE_DIR}/checkpoint.json" ]; then
     echo '{}' > "${PIPELINE_DIR}/checkpoint.json"
   fi
-  # $1 is a jq filter expression like '.phase = "inner" | .iteration = 1'
-  jq "$1" "${PIPELINE_DIR}/checkpoint.json" > "$_tmp" && mv "$_tmp" "${PIPELINE_DIR}/checkpoint.json"
+  # All arguments are forwarded to jq (filter + optional --arg flags)
+  jq "$@" "${PIPELINE_DIR}/checkpoint.json" > "$_tmp" && mv "$_tmp" "${PIPELINE_DIR}/checkpoint.json"
 }
 
 # Append a phase transition event
@@ -346,8 +346,9 @@ run_inner_loop() {
   _cycle="$1"
   _context="${2:-}"
   log "=== Inner Loop cycle ${_cycle}/${MAX_INNER_CYCLES} ==="
+  _prev_phase="$(ckpt_read 'phase' || echo 'start')"
   ckpt_update ".phase = \"inner\" | .inner_cycle = ${_cycle}"
-  ckpt_transition "$(ckpt_read 'phase' || echo 'start')" "inner" "$_context"
+  ckpt_transition "$_prev_phase" "inner" "$_context"
 
   # --- Clear stale sidecar files at cycle start ---
   rm -f "${PIPELINE_DIR}/.agent-signal" "${PIPELINE_DIR}/.pr-url"
@@ -419,7 +420,7 @@ run_inner_loop() {
   if [ -z "$_new_session" ]; then
     log "Warning: session_id not found in JSON output"
   else
-    ckpt_update ".session_id = \"${_new_session}\""
+    ckpt_update --arg sid "$_new_session" '.session_id = $sid'
   fi
 
   report_event "implement" "{\"cycle\":${_cycle},\"log\":\"${_impl_log}\"}"
@@ -481,7 +482,7 @@ Review the current git diff for code quality issues. Focus on:
 4. Security concerns
 5. Debug code left behind
 
-Write findings to docs/reports/ following the self-review template.
+Write findings to .harness/state/pipeline/ following the self-review template.
 If there are CRITICAL findings, clearly state them.
 REVIEW
   fi
@@ -696,7 +697,7 @@ PR_PROMPT
 
   if [ -n "$_pr_url" ]; then
     log "PR created: ${_pr_url}"
-    ckpt_update ".pr_created = true | .pr_url = \"${_pr_url}\" | .status = \"complete\""
+    ckpt_update --arg url "$_pr_url" '.pr_created = true | .pr_url = $url | .status = "complete"'
     report_event "pr-created" "{\"cycle\":${_cycle},\"url\":\"${_pr_url}\"}"
   else
     log "PR creation step completed but URL not detected (check log for details)"
