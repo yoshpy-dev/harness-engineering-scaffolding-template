@@ -20,18 +20,23 @@ Create or update a plan in `docs/plans/active/`.
      a. `gh issue view <number> --json title,body,labels,number`
      b. Pre-fill: Objective from title, Related request from body, Related issue: #N
      c. If no issue provided: set "Related issue: N/A"
-2.7. **Flow selection**: Use **AskUserQuestion** to ask the user which execution flow to use. This determines the plan template in step 3.
+2.7. **Flow selection**: Use **AskUserQuestion** to ask the user which execution flow to use.
    - Question: "どちらの開発フローで進めますか？"
    - Options:
      1. **標準フロー (/work)** — Claude Code 内で対話的に実装を進める（短〜中規模タスク向け）
-     2. **Ralph Loop 単一パイプライン (/loop)** — 単一ワークツリーで自律反復実行（大規模タスク向け）
-     3. **Ralph Loop 並列スライス (/loop --slices)** — 複数ワークツリーで並列実行（大規模・分割可能タスク向け）
+     2. **Ralph Loop (/loop)** — ターミナルで自律反復実行する（大規模・持続的自律作業向け）
    - If the plan mentions large-scale refactoring, migration, test-coverage campaigns, or multi-file autonomous work, recommend Ralph Loop.
-   - If the work can be split into independent slices, recommend 並列スライス.
-   - After the user chooses, proceed to step 3 with the appropriate template.
-3. Choose one active plan file based on the flow selected in 2.7:
-   - **標準フロー** or **Ralph Loop 単一パイプライン**: Create with `./scripts/new-feature-plan.sh <slug> [issue-number]` or from [template.md](template.md).
-   - **Ralph Loop 並列スライス**: Create with `./scripts/new-ralph-plan.sh <slug> [issue-number] [slice-count]` to generate a directory-based plan structure under `docs/plans/active/<date>-<slug>/`.
+   - After the user chooses, if Ralph Loop was selected, proceed to step 2.8. Otherwise, proceed to step 3.
+2.8. **Plan structure** (Ralph Loop only): Use **AskUserQuestion** to determine the plan structure.
+   - Question: "プラン構造はどちらにしますか？"
+   - Options:
+     1. **単一プラン** — 1つのプランファイルで実行（ほとんどのタスク向け）(Recommended)
+     2. **並列スライスプラン** — ディレクトリベースプランで複数スライスを並列実行（大規模・分割可能タスク向け）
+   - If the work can be split into independent slices, recommend 並列スライスプラン.
+   - Note: ループモード（標準ループ / パイプラインループ）は `/loop` 実行時に選択します。並列スライスプラン選択時は常にパイプラインモードになります。
+3. Choose one active plan file based on the structure selected in 2.7/2.8:
+   - **標準フロー** or **Ralph Loop 単一プラン**: Create with `./scripts/new-feature-plan.sh <slug> [issue-number]` or from [template.md](template.md).
+   - **Ralph Loop 並列スライスプラン**: Create with `./scripts/new-ralph-plan.sh <slug> [issue-number] [slice-count]` to generate a directory-based plan structure under `docs/plans/active/<date>-<slug>/`.
 4. Fill in:
    - objective
    - scope and non-goals
@@ -61,8 +66,7 @@ Create or update a plan in `docs/plans/active/`.
    g. After user decision, proceed to step 7.
 7. **Flow confirmation**: Confirm the flow selected in step 2.7 and state which skill to invoke next:
    - 標準フロー → `/work`
-   - Ralph Loop 単一パイプライン → `/loop`
-   - Ralph Loop 並列スライス → `/loop` (with `--slices` option)
+   - Ralph Loop → `/loop`（ループモード選択は `/loop` にて）
 
 ## Output
 

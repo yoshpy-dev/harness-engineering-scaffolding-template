@@ -20,11 +20,13 @@ Read `AGENTS.md` and scan `docs/plans/active/` to understand the current project
 
 ### Step 1.5 — ループモード選択
 
-Use **AskUserQuestion** to let the user pick a loop mode:
+First, detect the plan type:
+- If the active plan is a **directory** (contains `_manifest.md` + `slice-*.md`): auto-select **並列スライスパイプライン** mode → skip to Step 2 (no question needed).
+- Otherwise (single file plan or no plan): use **AskUserQuestion** to let the user pick a loop mode.
 
-- Options:
-  1. **標準ループ** — implementation-only loop (`ralph-loop.sh`). Post-implementation pipeline runs manually after the loop.
-  2. **パイプラインループ (Recommended)** — full autonomous pipeline (`ralph-pipeline.sh`): implement → self-review → verify → test → sync-docs → codex-review → PR. The loop handles everything from implementation through PR creation.
+AskUserQuestion options (single plan / no plan):
+  1. **標準ループ** — implementation-only loop (`ralph-loop.sh`). Post-implementation pipeline runs via subagents after the loop.
+  2. **パイプラインループ (Recommended)** — full autonomous pipeline (`ralph-pipeline.sh`): implement → self-review → verify → test → sync-docs → codex-review → PR.
 - If the plan involves large-scale work, multi-step features, or the user wants full autonomy, recommend パイプラインループ.
 
 ### Step 2 — タスクタイプ選択

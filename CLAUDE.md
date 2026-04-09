@@ -8,11 +8,14 @@ Use this file only for Claude-specific guidance that must be always-on.
 
 - `/plan` is the only manual-trigger skill. All others (work, loop, self-review, verify, test, codex-review, pr, sync-docs, audit-harness) are auto-invoked.
 - Use `/plan` before risky, ambiguous, or multi-file work. It does not create a branch — branch/worktree creation is deferred to the chosen flow skill.
-- `/plan` ends with a flow selection prompt: standard (/work) or Ralph Loop (/loop). Follow the user's choice.
-- `/work` creates a normal branch (`git checkout -b`) and starts implementation.
-- `/loop` creates a Git Worktree (`git worktree add`) for isolated autonomous iteration. Supports two modes: **standard** (implementation-only) and **pipeline** (full autonomous Inner/Outer Loop: implement → self-review → verify → test → sync-docs → codex-review → PR). Pipeline mode also supports **parallel slices** via `ralph-orchestrator.sh`: directory-based plan → multi-worktree → integration branch → sequential merge → unified PR.
-- In pipeline mode, `ralph-pipeline.sh` handles the full lifecycle autonomously — no manual subagent chain needed. Use `./scripts/ralph run` or `./scripts/ralph status` to operate.
-- In standard mode or after /work, the post-implementation pipeline runs automatically via subagents (`/self-review` → `/verify` → `/test` → `/sync-docs`), then `/codex-review` (optional, inline), then `/pr`.
+- `/plan` asks two decisions: (1) 標準フロー (/work) or Ralph Loop (/loop), (2) Ralph Loop 時は単一プラン or 並列スライスプラン。Follow the user's choice.
+- `/work` creates a normal branch (`git checkout -b`) and starts interactive implementation. Post-impl pipeline runs via subagents.
+- `/loop` creates a Git Worktree (`git worktree add`) for autonomous iteration. Three modes:
+  - **標準ループ** (`ralph-loop.sh`): implementation only. Post-impl pipeline runs via subagents after the loop.
+  - **パイプライン** (`ralph-pipeline.sh`): full autonomous Inner/Outer Loop (implement → self-review → verify → test → sync-docs → codex-review → PR).
+  - **並列スライス** (`ralph-orchestrator.sh`): directory-based plan → multi-worktree → integration branch → sequential merge → unified PR. Auto-selected when plan is directory-based.
+- In pipeline/parallel mode, the scripts handle the full lifecycle autonomously — no manual subagent chain needed. Use `./scripts/ralph run` or `./scripts/ralph status` to operate.
+- In standard loop mode or after /work, the post-implementation pipeline runs via subagents (`/self-review` → `/verify` → `/test` → `/sync-docs`), then `/codex-review` (optional, inline), then `/pr`.
 - `/self-review` is diff quality only. `/verify` is spec compliance + static analysis. `/test` is behavioral tests. Each produces a separate report.
 - Codex advisory is optional. If `codex` CLI is available, `/plan` and `/codex-review` invoke it for second-opinion feedback. If unavailable, the step is silently skipped and the flow continues unchanged.
 - Codex findings are presented to the user for judgment — never auto-applied.

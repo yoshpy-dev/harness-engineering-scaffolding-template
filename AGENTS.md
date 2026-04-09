@@ -20,17 +20,20 @@ Build coding-agent workflows that are:
 ## Primary loop
 
 1. Explore
-2. Plan (manual — creates plan, selects flow) [+ optional Codex plan advisory]
-3. Work (auto — creates branch) or Loop (auto — creates worktree)
-   - Loop standard: implementation-only, post-impl pipeline runs via subagents
-   - Loop pipeline: full autonomous Inner/Outer Loop (implement → review → verify → test → docs → codex → PR)
-   - Loop parallel slices: directory-based plan → multi-worktree → integration branch → sequential merge → unified PR
+2. Plan (manual — creates plan, selects flow and plan structure) [+ optional Codex plan advisory]
+3. **標準フロー**: Work (auto — creates branch, interactive implementation)
+   **Ralph Loop**: Loop (auto — creates worktree, autonomous iteration)
+   - 標準ループ: `ralph-loop.sh` — implementation only
+   - パイプライン: `ralph-pipeline.sh` — full autonomous (implement → review → verify → test → docs → codex → PR)
+   - 並列スライス: `ralph-orchestrator.sh` — multi-worktree parallel → integration branch → unified PR
 4. Self-review (auto — via `reviewer` subagent, or pipeline-internal)
 5. Verify (auto — via `verifier` subagent, or pipeline-internal)
 6. Test (auto — via `tester` subagent, or pipeline-internal)
 7. Codex review (auto, optional — cross-model second opinion)
 8. PR (auto — includes hand-off)
 9. CI verify + human merge
+
+Steps 4–8 run via subagents in 標準フロー and 標準ループ. In パイプライン and 並列スライス, they are handled internally by the pipeline scripts.
 
 ## Source of truth
 

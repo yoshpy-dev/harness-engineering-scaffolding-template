@@ -2,6 +2,30 @@
 
 Autonomous multi-iteration coding with `claude -p` and file-system memory.
 
+## Flow overview
+
+| Flow | Trigger | Script | Branch | Post-impl pipeline | Use case |
+|------|---------|--------|--------|--------------------|----------|
+| 標準フロー | `/work` | (Claude Code session) | `git checkout -b` | subagents | 短〜中規模、対話的 |
+| Ralph Loop 標準ループ | `/loop` → 標準ループ | `ralph-loop.sh` | `git worktree add` | subagents (after loop) | 大規模、実装のみ自律 |
+| Ralph Loop パイプライン | `/loop` → パイプライン | `ralph-pipeline.sh` | `git worktree add` | pipeline-internal | 大規模、完全自律 |
+| Ralph Loop 並列スライス | `/loop` (auto) | `ralph-orchestrator.sh` | `git worktree add` × N | pipeline-internal × N | 大規模、分割可能、並列 |
+
+### Decision flow
+
+```
+/plan
+  ├── "標準フロー (/work)" → /work → 対話的実装 → subagents → /pr
+  └── "Ralph Loop (/loop)" → /loop
+        │
+        ├── [ディレクトリプラン検出] → 並列スライスパイプライン (auto)
+        │     ralph-orchestrator.sh → pipeline × N → integration merge → unified PR
+        │
+        ├── "標準ループ" → ralph-loop.sh → 実装 → (return to CC) → subagents → /pr
+        │
+        └── "パイプラインループ" → ralph-pipeline.sh → 完全自律 → PR
+```
+
 ## What is it
 
 The Ralph Loop is a pattern where a shell script repeatedly pipes a prompt file into `claude -p`, letting the agent iterate on a task across many fresh-context invocations. The file system (git, progress logs, state files) serves as the agent's persistent memory.
