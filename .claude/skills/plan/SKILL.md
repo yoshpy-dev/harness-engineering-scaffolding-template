@@ -20,7 +20,7 @@ Create or update a plan in `docs/plans/active/`.
      a. `gh issue view <number> --json title,body,labels,number`
      b. Pre-fill: Objective from title, Related request from body, Related issue: #N
      c. If no issue provided: set "Related issue: N/A"
-3. Choose one active plan file. If none exists, create one with `./scripts/new-feature-plan.sh <slug> [issue-number]` or from [template.md](template.md).
+3. Choose one active plan file. If none exists, create one with `./scripts/new-feature-plan.sh <slug> [issue-number]` or from [template.md](template.md). For Ralph Loop with parallel slices, use `docs/plans/templates/ralph-loop-plan.md` instead.
 4. Fill in:
    - objective
    - scope and non-goals

@@ -22,9 +22,11 @@ Build coding-agent workflows that are:
 1. Explore
 2. Plan (manual — creates plan, selects flow) [+ optional Codex plan advisory]
 3. Work (auto — creates branch) or Loop (auto — creates worktree)
-4. Self-review (auto — via `reviewer` subagent)
-5. Verify (auto — via `verifier` subagent)
-6. Test (auto — via `tester` subagent)
+   - Loop standard: implementation-only, post-impl pipeline runs via subagents
+   - Loop pipeline: full autonomous Inner/Outer Loop (implement → review → verify → test → docs → codex → PR)
+4. Self-review (auto — via `reviewer` subagent, or pipeline-internal)
+5. Verify (auto — via `verifier` subagent, or pipeline-internal)
+6. Test (auto — via `tester` subagent, or pipeline-internal)
 7. Codex review (auto, optional — cross-model second opinion)
 8. PR (auto — includes hand-off)
 9. CI verify + human merge
@@ -47,7 +49,7 @@ Build coding-agent workflows that are:
 - `.claude/agents/` — specialized subagents
 - `.claude/hooks/` — deterministic runtime checks
 - `packs/languages/` — language-specific depth
-- `scripts/` — reusable verification and bootstrap scripts
+- `scripts/` — reusable verification and bootstrap scripts (includes `ralph` CLI, `ralph-pipeline.sh`, `ralph-orchestrator.sh`)
 - `.harness/state/` — runtime state, not canonical truth
 
 ## Planning contract

@@ -56,8 +56,19 @@ Task(subagent_type="doc-maintainer", prompt="Run /sync-docs after <slug> impleme
 
 This runs after the test step and before `/pr`, producing documentation updates as a separate concern from implementation.
 
+## Ralph Pipeline mode — self-contained
+
+When running in pipeline mode (`ralph-pipeline.sh`), the orchestrator invokes each phase (implement, self-review, verify, test, sync-docs, codex-review, PR) as separate `claude -p` calls. The pipeline itself handles the full lifecycle — no subagent delegation is needed from the main context.
+
+The pipeline replaces the standard post-implementation subagent chain. When a user returns after a pipeline run, check `checkpoint.json` for the final status rather than running the subagent chain.
+
+## Ralph Orchestrator mode — parallel pipelines
+
+When running in orchestrator mode (`ralph-orchestrator.sh`), each slice gets its own worktree and runs `ralph-pipeline.sh` independently. No cross-slice subagent coordination is needed — each pipeline is self-contained.
+
 ## Rationale
 
 - Post-implementation steps produce independent artifacts with clear boundaries — ideal for subagent isolation.
 - Subagent execution preserves main context tokens for implementation work.
 - Sequential execution ensures each step can react to prior findings.
+- Pipeline mode internalizes the subagent chain into the orchestrator script, making it self-contained for autonomous execution.
