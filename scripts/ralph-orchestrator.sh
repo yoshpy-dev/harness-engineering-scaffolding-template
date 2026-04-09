@@ -635,7 +635,7 @@ ORCH_JSON
         _deps_tmp="${ORCH_STATE}/.deps_check.tmp"
         echo "$d" | tr ',' '\n' > "$_deps_tmp"
         while IFS= read -r dep; do
-          _dep_slug="$(echo "$dep" | tr -d ' []' | tr '[:upper:]' '[:lower:]' | sed 's/^slice //')"
+          _dep_slug="$(echo "$dep" | tr -d ' []' | tr '[:upper:]' '[:lower:]' | sed 's/^slice[- ]*//')"
           [ -z "$_dep_slug" ] && continue
           _dep_status="$(check_slice_status "$_dep_slug")"
           if [ "$_dep_status" != "complete" ]; then

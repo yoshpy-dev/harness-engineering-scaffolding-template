@@ -618,7 +618,8 @@ DOCS
 
   if [ "$_has_codex" = "true" ] && [ "$DRY_RUN" -eq 0 ]; then
     log "Running codex review..."
-    _base="$(git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null | sed 's|origin/||' || echo main)"
+    _base="$(git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null | sed 's|origin/||')"
+    _base="${_base:-main}"
     if ! git diff "${_base}...HEAD" --quiet 2>/dev/null; then
       codex exec review --base "$_base" 2>&1 | tee "$_codex_log" || true
 
