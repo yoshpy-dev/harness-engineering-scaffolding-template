@@ -311,17 +311,17 @@ run_inner_loop() {
 
   # Build the prompt with context injection
   _impl_prompt="${PIPELINE_DIR}/.impl-prompt.md"
-  if [ -f ".claude/skills/loop/prompts/pipeline-inner.md" ]; then
+  # Prefer substituted copy from ralph-loop-init.sh --pipeline, fall back to raw template
+  if [ -f "${PIPELINE_DIR}/pipeline-inner.md" ]; then
+    cp "${PIPELINE_DIR}/pipeline-inner.md" "$_impl_prompt"
+  elif [ -f ".claude/skills/loop/prompts/pipeline-inner.md" ]; then
     cp ".claude/skills/loop/prompts/pipeline-inner.md" "$_impl_prompt"
+  elif [ -f ".harness/state/loop/PROMPT.md" ]; then
+    cp ".harness/state/loop/PROMPT.md" "$_impl_prompt"
   else
-    # Fallback: use the existing PROMPT.md from classic loop init
-    if [ -f ".harness/state/loop/PROMPT.md" ]; then
-      cp ".harness/state/loop/PROMPT.md" "$_impl_prompt"
-    else
-      log_error "No implementation prompt found. Run ralph-loop-init.sh --pipeline first."
-      ckpt_update '.status = "config_error"'
-      return 5
-    fi
+    log_error "No implementation prompt found. Run ralph-loop-init.sh --pipeline first."
+    ckpt_update '.status = "config_error"'
+    return 5
   fi
 
   # Append checkpoint context if resuming or in later cycles
@@ -395,7 +395,9 @@ run_inner_loop() {
   _review_log="${PIPELINE_DIR}/inner-${_cycle}-self-review.log"
   _review_prompt="${PIPELINE_DIR}/.review-prompt.md"
 
-  if [ -f ".claude/skills/loop/prompts/pipeline-review.md" ]; then
+  if [ -f "${PIPELINE_DIR}/pipeline-review.md" ]; then
+    cp "${PIPELINE_DIR}/pipeline-review.md" "$_review_prompt"
+  elif [ -f ".claude/skills/loop/prompts/pipeline-review.md" ]; then
     cp ".claude/skills/loop/prompts/pipeline-review.md" "$_review_prompt"
   else
     cat > "$_review_prompt" <<'REVIEW'
@@ -459,7 +461,7 @@ REVIEW
     # Record failure triage entry
     _failure_id="F$(printf '%03d' "$_cycle")"
     ckpt_update ".last_test_result = \"fail\" | .test_failures += [\"cycle_${_cycle}\"]"
-    ckpt_update ".failure_triage += [{\"failure_id\":\"${_failure_id}\",\"cycle\":${_cycle},\"attempt\":1,\"max_attempts\":${MAX_REPAIR_ATTEMPTS},\"resolved\":false,\"timestamp\":\"$(ts)\"}]"
+    ckpt_update ".failure_triage += [{\"failure_id\":\"${_failure_id}\",\"cycle\":${_cycle},\"test_name\":\"cycle_${_cycle}_tests\",\"hypothesis\":\"pending_agent_analysis\",\"planned_fix\":\"pending_agent_analysis\",\"expected_evidence\":\"test pass after fix\",\"attempt\":1,\"max_attempts\":${MAX_REPAIR_ATTEMPTS},\"resolved\":false,\"timestamp\":\"$(ts)\"}]"
 
     # Check repair attempt limit
     _total_repairs="$(jq '[.failure_triage[] | select(.resolved == false)] | length' "${PIPELINE_DIR}/checkpoint.json" 2>/dev/null || echo 0)"
@@ -497,7 +499,9 @@ run_outer_loop() {
   _docs_log="${PIPELINE_DIR}/outer-${_cycle}-sync-docs.log"
   _docs_prompt="${PIPELINE_DIR}/.docs-prompt.md"
 
-  if [ -f ".claude/skills/loop/prompts/pipeline-outer.md" ]; then
+  if [ -f "${PIPELINE_DIR}/pipeline-outer.md" ]; then
+    cp "${PIPELINE_DIR}/pipeline-outer.md" "$_docs_prompt"
+  elif [ -f ".claude/skills/loop/prompts/pipeline-outer.md" ]; then
     cp ".claude/skills/loop/prompts/pipeline-outer.md" "$_docs_prompt"
   else
     cat > "$_docs_prompt" <<'DOCS'

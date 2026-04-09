@@ -339,8 +339,9 @@ integration_merge_check() {
     return 1
   }
 
-  # Try merging each slice branch
-  ls "${ORCH_STATE}"/slice-*.status 2>/dev/null | while IFS= read -r status_file; do
+  # Try merging each slice branch (use for loop to avoid pipe-subshell variable loss)
+  for status_file in "${ORCH_STATE}"/slice-*.status; do
+    [ -f "$status_file" ] || continue
     _s="$(basename "$status_file" | sed 's/^slice-//;s/\.status$//')"
     _status="$(cat "$status_file")"
     if [ "$_status" = "complete" ]; then
@@ -442,10 +443,14 @@ ORCH_JSON
     return 0
   fi
 
+  # --- Save slices to temp file for iteration without pipe-subshell ---
+  _slices_file="${ORCH_STATE}/.slices.dat"
+  echo "$slices_data" > "$_slices_file"
+
   # --- Create worktrees ---
-  echo "$slices_data" | while IFS='|' read -r s o d f; do
+  while IFS='|' read -r s o d f; do
     create_worktree "$s"
-  done
+  done < "$_slices_file"
 
   # --- Execute slices respecting dependencies ---
   _running=0
@@ -453,13 +458,12 @@ ORCH_JSON
   _failed=0
   _total="$_slice_count"
 
-  # Track which slices are done
-  : > "${ORCH_STATE}/.completed_slices"
+  # Track running files for locklist
   : > "${ORCH_STATE}/.running_files"
 
   while [ "$((_completed + _failed))" -lt "$_total" ]; do
     # Try to start eligible slices
-    echo "$slices_data" | while IFS='|' read -r s o d f; do
+    while IFS='|' read -r s o d f; do
       _s_status="$(check_slice_status "$s")"
 
       # Skip if already started or done
@@ -467,17 +471,21 @@ ORCH_JSON
         running|complete|failed|stuck|repair_limit|aborted) continue ;;
       esac
 
-      # Check dependency satisfaction
+      # Check dependency satisfaction (avoid pipe-subshell by using temp file)
       _deps_met=1
       if [ -n "$d" ]; then
-        echo "$d" | tr ',' '\n' | while IFS= read -r dep; do
+        _deps_tmp="${ORCH_STATE}/.deps_check.tmp"
+        echo "$d" | tr ',' '\n' > "$_deps_tmp"
+        while IFS= read -r dep; do
           _dep_slug="$(echo "$dep" | tr -d ' []' | tr '[:upper:]' '[:lower:]' | sed 's/^slice //')"
+          [ -z "$_dep_slug" ] && continue
           _dep_status="$(check_slice_status "$_dep_slug")"
           if [ "$_dep_status" != "complete" ]; then
             _deps_met=0
             break
           fi
-        done
+        done < "$_deps_tmp"
+        rm -f "$_deps_tmp"
       fi
 
       if [ "$_deps_met" -eq 0 ]; then
@@ -493,7 +501,8 @@ ORCH_JSON
       fi
 
       # Check parallel capacity
-      _current_running="$(grep -c 'running' "${ORCH_STATE}"/slice-*.status 2>/dev/null || echo 0)"
+      _current_running=0
+      _current_running="$(grep -c 'running' "${ORCH_STATE}"/slice-*.status 2>/dev/null)" || _current_running=0
       if [ "$_current_running" -ge "$MAX_PARALLEL" ]; then
         continue
       fi
@@ -501,7 +510,7 @@ ORCH_JSON
       # Start the slice
       echo "$f" | tr ',' '\n' >> "${ORCH_STATE}/.running_files"
       run_slice "$s" "$o"
-    done
+    done < "$_slices_file"
 
     # Update status counts
     _completed=0

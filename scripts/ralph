@@ -289,13 +289,16 @@ cmd_abort() {
         log "Removed worktree: ${_wt_path}"
       fi
     else
-      # Remove all ralph worktrees
+      # Remove all ralph worktrees (use temp file to avoid pipe-subshell variable loss)
       _wt_list=""
-      git worktree list 2>/dev/null | grep "${WORKTREE_BASE}" | while IFS=' ' read -r wpath _rest; do
+      _wt_tmp="$(mktemp)"
+      git worktree list 2>/dev/null | grep "${WORKTREE_BASE}" > "$_wt_tmp" || true
+      while IFS=' ' read -r wpath _rest; do
         git worktree remove "$wpath" --force 2>/dev/null || true
         _wt_list="${_wt_list:+${_wt_list}, }\"${wpath}\""
         log "Removed worktree: ${wpath}"
-      done
+      done < "$_wt_tmp"
+      rm -f "$_wt_tmp"
       _worktrees_removed="[${_wt_list}]"
     fi
 
