@@ -165,7 +165,9 @@ Then wire it into:
 
 ## Ralph Loop (autonomous iteration)
 
-For tasks that benefit from sustained autonomous work, the Ralph Loop runs `claude -p` in a shell loop with file-system memory.
+For tasks that benefit from sustained autonomous work, the Ralph Loop runs `claude -p` in a shell loop with file-system memory. Two modes are available:
+
+**Standard mode** — implementation-only loop. Post-implementation pipeline runs via subagents after the loop.
 
 ```sh
 # Initialize a loop session
@@ -175,9 +177,20 @@ For tasks that benefit from sustained autonomous work, the Ralph Loop runs `clau
 ./scripts/ralph-loop.sh --verify --max-iterations 10
 ```
 
-Or use the `/loop` skill inside Claude Code for interactive setup.
+**Pipeline mode** — full autonomous pipeline (implement → self-review → verify → test → sync-docs → codex-review → PR). The loop handles everything from implementation through PR creation.
 
-Task-specific templates are available for: general, refactor, test-coverage, bugfix, docs, and migration work. Safety rails include iteration limits, stuck detection (3 consecutive no-change iterations), and optional verification after each iteration.
+```sh
+# Use the ralph CLI (auto-detects plan from docs/plans/active/)
+./scripts/ralph run
+./scripts/ralph run --preflight --dry-run   # validate setup first
+./scripts/ralph run --slices                 # multi-worktree parallel mode
+./scripts/ralph status                       # check progress
+./scripts/ralph abort                        # safely stop and archive state
+```
+
+Or use the `/loop` skill inside Claude Code for interactive setup of either mode.
+
+Task-specific templates are available for: general, refactor, test-coverage, bugfix, docs, and migration work. Safety rails include iteration limits, stuck detection (3 consecutive no-change iterations), Inner/Outer Loop architecture with repair attempt caps, and hook parity checks.
 
 See `docs/recipes/ralph-loop.md` for the full guide.
 

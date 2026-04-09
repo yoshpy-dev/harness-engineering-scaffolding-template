@@ -163,6 +163,49 @@ Edit `.harness/state/loop/PROMPT.md` directly after initialization. Common custo
 - Add acceptance criteria
 - Reference specific plan sections
 
+## Pipeline mode (full autonomous pipeline)
+
+Pipeline mode extends the standard loop with a full Inner/Outer Loop architecture that handles implementation, review, verification, testing, docs sync, codex review, and PR creation autonomously.
+
+```sh
+# Use the ralph CLI
+./scripts/ralph run                             # auto-detect plan, run pipeline
+./scripts/ralph run --preflight --dry-run       # validate setup first
+./scripts/ralph run --max-iterations 15         # bounded pipeline
+./scripts/ralph run --slices --plan <plan-file> # multi-worktree parallel slices
+./scripts/ralph status                          # check progress
+./scripts/ralph abort                           # safely stop and archive state
+```
+
+Or initialize manually and run directly:
+
+```sh
+./scripts/ralph-loop-init.sh --pipeline general "Implement user authentication" my-plan
+./scripts/ralph-pipeline.sh --max-inner-cycles 5
+```
+
+### Inner / Outer Loop architecture
+
+```
+Inner Loop (per cycle):
+  implement → self-review → verify → test
+  → if tests fail: retry (up to --max-inner-cycles)
+
+Outer Loop (after tests pass):
+  sync-docs → codex-review → PR
+  → if codex ACTION_REQUIRED: regress to Inner Loop
+```
+
+Pipeline state lives in `.harness/state/pipeline/checkpoint.json`. Use `./scripts/ralph status` to inspect it.
+
+### When to choose pipeline mode
+
+- Large-scale features or refactors where you want the full cycle handled autonomously
+- When you have a Ralph Loop plan with vertical slices for parallel execution
+- When you want PR creation without returning to Claude Code
+
+For smaller tasks, the standard loop plus manual post-implementation pipeline is simpler.
+
 ## Archiving
 
 When you re-initialize a loop, the previous state is automatically archived to `.harness/state/loop-archive/<timestamp>/`.
