@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-04-09T08:21:05Z",
+  "all_pass": false,
+  "checks": [
+    {
+      "check": "secret_leak_detection",
+      "result": "fail"
+    },
+    {
+      "check": "uncommitted_changes",
+      "result": "warn"
+    },
+    {
+      "check": "forbidden_file_patterns",
+      "result": "pass"
+    }
+  ]
+}

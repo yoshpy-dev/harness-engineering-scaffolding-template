@@ -21,7 +21,7 @@ ts() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 ts_file() { date -u '+%Y-%m-%d-%H%M%S'; }
 log() { printf '[%s] %s\n' "$(ts)" "$*"; }
 
-usage() {
+print_usage() {
   cat <<'USAGE'
 ralph — autonomous development pipeline CLI
 
@@ -54,6 +54,10 @@ Examples:
   ralph status
   ralph abort
 USAGE
+}
+
+usage() {
+  print_usage
   exit 1
 }
 
@@ -348,6 +352,6 @@ case "$_command" in
   run)    cmd_run "$@" ;;
   status) cmd_status "$@" ;;
   abort)  cmd_abort "$@" ;;
-  -h|--help) usage ;;
+  -h|--help) print_usage; exit 0 ;;
   *)      echo "Unknown command: ${_command}"; usage ;;
 esac

@@ -392,13 +392,14 @@ Ralph Loop を「実装のみ」から「実装→レビュー→検証→テス
 
 ## Progress checklist
 
-- [ ] Plan reviewed
-- [ ] Branch created
-- [ ] Phase 1: Inner/Outer Loop 実装
-- [ ] Phase 2: コンテキスト戦略実装
-- [ ] Phase 3: マルチエージェント並列実装
-- [ ] Phase 4: CLI ラッパー実装
+- [x] Plan reviewed
+- [x] Branch created (feat/ralph-loop-v2)
+- [x] Phase 1: Inner/Outer Loop 実装 (ralph-pipeline.sh, prompt templates, ralph-loop-init.sh --pipeline)
+- [x] Phase 2: コンテキスト戦略実装 (checkpoint.json, session continuation, hook parity — embedded in ralph-pipeline.sh)
+- [x] Phase 3: マルチエージェント並列実装 (ralph-orchestrator.sh, ralph-loop-plan.md template)
+- [x] Phase 4: CLI ラッパー実装 (scripts/ralph with plan/run/status/abort)
+- [x] ドキュメント更新 (loop/SKILL.md, plan/SKILL.md, subagent-policy.md, CLAUDE.md, AGENTS.md)
 - [ ] Review artifact created
 - [ ] Verification artifact created
-- [ ] Test artifact created
+- [x] Test artifact created
 - [ ] PR created

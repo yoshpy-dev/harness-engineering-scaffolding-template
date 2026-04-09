@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-04-09T08:21:05Z",
+  "all_pass": true,
+  "probes": [
+    {
+      "probe": "claude_cli_available",
+      "result": "pass"
+    },
+    {
+      "probe": "jq_available",
+      "result": "pass"
+    },
+    {
+      "probe": "claude_md_readable",
+      "result": "skip_dry_run"
+    },
+    {
+      "probe": "git_available",
+      "result": "pass"
+    },
+    {
+      "probe": "codex_cli",
+      "result": "available"
+    }
+  ]
+}
