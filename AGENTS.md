@@ -41,7 +41,7 @@ Build coding-agent workflows that are:
 
 ## Repo map
 
-- `docs/plans/active/` — current plans (single files or `<date>-<slug>/` directories with `_manifest.md` + `slice-*.md`)
+- `docs/plans/active/` — current plans (single files for standard flow; `<date>-<slug>/` directories with `_manifest.md` + `slice-*.md` for Ralph Loop)
 - `docs/plans/archive/` — completed plans
 - `docs/plans/templates/` — plan templates (`feature-plan.md`, `ralph-loop-manifest.md`, `ralph-loop-slice.md`)
 - `docs/reports/` — self-review, verify, test, walkthrough artifacts
