@@ -71,7 +71,11 @@ The default philosophy here is:
 3. Create your first plan.
 
    ```sh
+   # Standard flow
    ./scripts/new-feature-plan.sh login-form
+
+   # Ralph Loop (directory-based plan with parallel slices)
+   ./scripts/new-ralph-plan.sh login-form N/A 3
    ```
 
 4. In Claude Code, follow the loop:
@@ -163,21 +167,27 @@ Then wire it into:
 - `.claude/rules/<name>.md`
 - project build/test/tooling
 
-## Ralph Loop (autonomous iteration)
+## Ralph Loop (autonomous parallel execution)
 
-For tasks that benefit from sustained autonomous work, the Ralph Loop runs `claude -p` in a shell loop with file-system memory.
+For large tasks that can be split into independent slices, the Ralph Loop runs parallel pipelines across multiple Git worktrees. Each slice gets its own `claude -p` pipeline that handles the full lifecycle autonomously (implement → self-review → verify → test → sync-docs → codex-review). Completed slices are sequentially merged into an integration branch, and a unified PR is created.
 
 ```sh
-# Initialize a loop session
-./scripts/ralph-loop-init.sh general "Implement user authentication"
+# Create a directory-based plan with slices
+./scripts/new-ralph-plan.sh my-feature N/A 3
 
-# Run it
-./scripts/ralph-loop.sh --verify --max-iterations 10
+# Run the orchestrator
+./scripts/ralph run --plan docs/plans/active/2026-01-01-my-feature/ --unified-pr
+
+# Check progress
+./scripts/ralph status
+
+# Safely stop
+./scripts/ralph abort
 ```
 
 Or use the `/loop` skill inside Claude Code for interactive setup.
 
-Task-specific templates are available for: general, refactor, test-coverage, bugfix, docs, and migration work. Safety rails include iteration limits, stuck detection (3 consecutive no-change iterations), and optional verification after each iteration.
+Safety rails include iteration limits, stuck detection (3 consecutive no-change iterations), Inner/Outer Loop architecture with repair attempt caps, and hook parity checks.
 
 See `docs/recipes/ralph-loop.md` for the full guide.
 

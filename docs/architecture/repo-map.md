@@ -40,7 +40,7 @@
 ## Extensions
 
 - `packs/languages/`: stack-specific rules and verification
-- `scripts/`: bootstrap, plan creation, verification, status, Ralph Loop orchestration, Codex availability check
+- `scripts/`: bootstrap, plan creation (`new-feature-plan.sh`, `new-ralph-plan.sh`), plan archival (`archive-plan.sh`), verification, status, Ralph Loop orchestration (`ralph-loop.sh`, `ralph-loop-init.sh`), pipeline orchestration (`ralph-pipeline.sh`, `ralph-orchestrator.sh`, `ralph` CLI), Codex availability check
 - `examples/`: testing prompts and examples
 - `.github/workflows/`: CI checks (verify.yml, check-template.yml)
 
@@ -49,4 +49,6 @@
 - `.harness/state/`: transient markers and summaries
 - `.harness/state/loop/`: Ralph Loop state (PROMPT.md, progress.log, iteration logs)
 - `.harness/state/loop-archive/`: archived loop sessions
+- `.harness/state/pipeline/`: pipeline mode state (checkpoint.json, phase logs, execution events, `.agent-signal` sidecar, `.pr-url` sidecar)
+- `.harness/state/orchestrator/`: multi-worktree orchestrator state (slice status, PIDs)
 - `.harness/logs/`: local logs

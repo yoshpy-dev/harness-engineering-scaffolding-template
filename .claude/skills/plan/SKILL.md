@@ -20,7 +20,16 @@ Create or update a plan in `docs/plans/active/`.
      a. `gh issue view <number> --json title,body,labels,number`
      b. Pre-fill: Objective from title, Related request from body, Related issue: #N
      c. If no issue provided: set "Related issue: N/A"
-3. Choose one active plan file. If none exists, create one with `./scripts/new-feature-plan.sh <slug> [issue-number]` or from [template.md](template.md).
+2.7. **Flow selection**: Use **AskUserQuestion** to ask the user which execution flow to use.
+   - Question: "どちらの開発フローで進めますか？"
+   - Options:
+     1. **標準フロー (/work)** — Claude Code 内で対話的に実装を進める（短〜中規模タスク向け）
+     2. **Ralph Loop (/loop)** — ディレクトリベースプランで並列スライス自律実行する（大規模・分割可能タスク向け）
+   - If the plan mentions large-scale refactoring, migration, test-coverage campaigns, or multi-file autonomous work, recommend Ralph Loop.
+   - After the user chooses, proceed to step 3.
+3. Choose one active plan file based on the flow selected in 2.7:
+   - **標準フロー**: Create with `./scripts/new-feature-plan.sh <slug> [issue-number]` or from [template.md](template.md).
+   - **Ralph Loop**: Create with `./scripts/new-ralph-plan.sh <slug> [issue-number] [slice-count]` to generate a directory-based plan structure under `docs/plans/active/<date>-<slug>/`.
 4. Fill in:
    - objective
    - scope and non-goals
@@ -48,14 +57,9 @@ Create or update a plan in `docs/plans/active/`.
         1. プランを修正する — edit plan per relevant findings, then re-display
         2. 指摘を確認済み、このまま進む — proceed without changes
    g. After user decision, proceed to step 7.
-7. **Flow selection**: Use **AskUserQuestion** to ask the user which execution flow to use.
-   - Question: "どちらの開発フローで進めますか？"
-   - Options:
-     1. **標準フロー (/work)** — Claude Code 内で対話的に実装を進める（短〜中規模タスク向け）
-     2. **Ralph Loop (/loop)** — ターミナルで自律反復実行する（大規模・持続的自律作業向け）
-   - If the plan mentions large-scale refactoring, migration, test-coverage campaigns, or multi-file autonomous work, recommend Ralph Loop.
-   - Otherwise, recommend 標準フロー.
-   - After the user chooses, state which flow will be used next and proceed accordingly.
+7. **Flow confirmation**: Confirm the flow selected in step 2.7 and state which skill to invoke next:
+   - 標準フロー → `/work`
+   - Ralph Loop → `/loop`
 
 ## Output
 

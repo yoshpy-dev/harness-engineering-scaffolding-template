@@ -3,6 +3,8 @@ set -eu
 
 # Initialize a Ralph Loop session.
 # Generates PROMPT.md and state files from a prompt template.
+#
+# Usage: ./ralph-loop-init.sh <task-type> <objective> [plan-slug]
 
 LOOP_DIR=".harness/state/loop"
 ARCHIVE_DIR=".harness/state/loop-archive"
@@ -45,7 +47,9 @@ if [ "$valid" -eq 0 ]; then
   exit 1
 fi
 
+# Select template
 template_file="${TEMPLATE_DIR}/${task_type}.md"
+
 if [ ! -f "$template_file" ]; then
   echo "Error: template not found: ${template_file}"
   exit 1
@@ -61,17 +65,41 @@ if [ -d "$LOOP_DIR" ] && [ -f "${LOOP_DIR}/task.json" ]; then
   rm -rf "$LOOP_DIR"
 fi
 
-# Create fresh state directory
+# Create fresh state directories
 mkdir -p "$LOOP_DIR"
 
-# Resolve plan path
+# Resolve plan path — supports 3 forms:
+#   1. Full path to an existing file (e.g., docs/plans/active/2026-04-10-foo/slice-1-bar.md)
+#   2. Directory path (e.g., docs/plans/active/2026-04-10-foo) → uses _manifest.md
+#   3. Slug (e.g., 2026-04-10-foo) → tries docs/plans/active/<slug>.md, then directory
 plan_path=""
 if [ -n "$plan_slug" ]; then
-  candidate="docs/plans/active/${plan_slug}.md"
-  if [ -f "$candidate" ]; then
-    plan_path="$candidate"
+  if [ -f "$plan_slug" ]; then
+    # Form 1: Full path to existing file
+    plan_path="$plan_slug"
+  elif [ -d "$plan_slug" ]; then
+    # Form 2a: Direct directory path
+    _manifest="${plan_slug}/_manifest.md"
+    if [ -f "$_manifest" ]; then
+      plan_path="$_manifest"
+    else
+      plan_path="$plan_slug"
+      echo "Warning: directory plan has no _manifest.md: ${plan_slug}"
+    fi
+  elif [ -d "docs/plans/active/${plan_slug}" ]; then
+    # Form 2b: Slug resolves to a directory
+    _manifest="docs/plans/active/${plan_slug}/_manifest.md"
+    if [ -f "$_manifest" ]; then
+      plan_path="$_manifest"
+    else
+      plan_path="docs/plans/active/${plan_slug}"
+      echo "Warning: directory plan has no _manifest.md: docs/plans/active/${plan_slug}"
+    fi
+  elif [ -f "docs/plans/active/${plan_slug}.md" ]; then
+    # Form 3: Slug resolves to a single file
+    plan_path="docs/plans/active/${plan_slug}.md"
   else
-    echo "Warning: plan file not found at ${candidate}, continuing without plan reference"
+    echo "Warning: plan not found for '${plan_slug}', continuing without plan reference"
   fi
 fi
 
@@ -86,6 +114,7 @@ echo "Generated ${LOOP_DIR}/PROMPT.md"
 
 # Create task.json
 created_ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
 cat > "${LOOP_DIR}/task.json" <<EOF
 {
   "objective": "${objective}",
@@ -123,5 +152,4 @@ echo "  Plan:      ${plan_path:-none}"
 echo ""
 echo "Next steps:"
 echo "  1. Review ${LOOP_DIR}/PROMPT.md"
-echo "  2. Run: ./scripts/ralph-loop.sh"
-echo "  3. Optional: ./scripts/ralph-loop.sh --verify --max-iterations 10"
+echo "  2. Run: ./scripts/ralph run --plan <plan-directory> --unified-pr"

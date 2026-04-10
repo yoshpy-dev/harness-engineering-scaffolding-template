@@ -1,15 +1,15 @@
 ---
 name: loop
-description: Initialize a Ralph Loop session for autonomous multi-iteration work. Generates PROMPT.md and state files from a task-specific template, then provides instructions to run the loop externally. Invoke automatically when a task benefits from sustained autonomous iteration outside Claude Code.
+description: Initialize a Ralph Loop session for autonomous parallel-slice execution. Creates a directory-based plan and runs ralph-orchestrator.sh for multi-worktree parallel pipelines with unified PR. Invoke automatically when a task benefits from sustained autonomous iteration outside Claude Code.
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash, AskUserQuestion
 ---
-Set up a Ralph Loop for autonomous iteration outside Claude Code.
+Set up a Ralph Loop for autonomous parallel-slice execution outside Claude Code.
 
 ## Goals
 
-- Turn a task into a self-contained loop that runs `cat PROMPT.md | claude -p` repeatedly
-- Choose the right prompt template for the task type
-- Leave the user ready to start the loop from their terminal
+- Turn a task into a self-contained parallel pipeline that runs autonomously
+- Set up a directory-based plan with slices for parallel execution
+- Leave the user ready to start the orchestrator from their terminal
 
 ## Steps
 
@@ -31,13 +31,13 @@ Use **AskUserQuestion** to let the user pick a task type.
   - docs — documentation updates
   - migration — language, framework, or API migration
 
-### Step 3 — 目的と計画ファイルの確認
+### Step 3 — 目的と計画ディレクトリの確認
 
-Use **AskUserQuestion** to confirm the objective and optionally link a plan file.
+Use **AskUserQuestion** to confirm the objective and link the plan directory.
 
 - Pre-fill the question with an objective inferred from conversation context.
-- If `docs/plans/active/` contains plan files, list them as options (plus "None" for no plan).
-- If no plans exist, skip the plan selection and only confirm the objective.
+- If `docs/plans/active/` contains directory-based plans (with `_manifest.md`), list them as options.
+- Ralph Loop requires a directory-based plan. If none exists, instruct the user to create one with `./scripts/new-ralph-plan.sh <slug> [issue] [slice-count]`.
 
 ### Step 3.5 — Git Worktree 作成
 
@@ -55,7 +55,7 @@ If already on a feature branch (not main/master), skip worktree creation and wor
 
 Run the init script with the confirmed parameters:
 ```sh
-./scripts/ralph-loop-init.sh <task-type> "<objective>" [plan-slug]
+./scripts/ralph-loop-init.sh <task-type> "<objective>" <plan-directory>
 ```
 
 ### Step 5 — PROMPT.md の承認
@@ -71,10 +71,13 @@ Read the generated `.harness/state/loop/PROMPT.md` and display its contents. The
 ### Step 6 — 実行コマンドの提示
 
 After approval, print the run command:
+
 ```sh
-./scripts/ralph-loop.sh                          # basic
-./scripts/ralph-loop.sh --verify                  # with verification
-./scripts/ralph-loop.sh --verify --max-iterations 10  # bounded
+./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --unified-pr
+# Dry run to verify slice parsing
+./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --dry-run
+# Bounded iterations
+./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --unified-pr --max-iterations 15
 ```
 
 ## Output
@@ -87,18 +90,14 @@ After approval, print the run command:
 
 ## After the loop
 
-**Trigger**: When the user returns to the Claude Code session after running `./scripts/ralph-loop.sh`, detect loop completion by reading `.harness/state/loop/status`. If the file exists (any status), automatically proceed with the post-implementation pipeline below. If the user explicitly mentions the loop is done, proceed even without the status file.
+The orchestrator handles everything autonomously (parallel pipeline per slice → integration merge → **integration pipeline** (`--skip-pr --fix-all`) → unified PR). The integration pipeline runs `ralph-pipeline.sh` on the merged branch following the canonical post-implementation order (`/self-review` → `/verify` → `/test` → `/sync-docs` → `/codex-review`) to catch cross-module issues and fix ALL findings before PR creation. When the user returns:
 
-1. Read `.harness/state/loop/status` to check outcome
-2. Read `.harness/state/loop/progress.log` for what happened
-3. Delegate the post-implementation pipeline to subagents per `.claude/rules/subagent-policy.md`:
-   a. `Task(subagent_type="reviewer")` → `/self-review` — stop if CRITICAL findings
-   b. `Task(subagent_type="verifier")` → `/verify` — stop if fail verdict
-   c. `Task(subagent_type="tester")` → `/test` — stop if fail verdict
-   d. `Task(subagent_type="doc-maintainer")` → `/sync-docs`
-   e. **Invoke `/codex-review` via the Skill tool** (optional, inline — if Codex CLI unavailable, skip to `/pr`)
-   f. **Invoke `/pr` via the Skill tool** — do NOT run `gh pr create` directly. The `/pr` skill enforces the Japanese template, pre-checks, and plan archiving.
-4. If a worktree was created, ask the user whether to keep or remove it (`git worktree remove .claude/worktrees/<slug>`)
+1. Run `./scripts/ralph status` to check outcome
+2. Read `.harness/state/orchestrator/orchestrator.json` for final state
+3. If all slices are `complete` and the unified PR was created — show the PR URL.
+4. If any slice is `stuck`, `repair_limit`, or `aborted` — review the failure context and help the user decide next steps (resume, abort, or manual intervention).
+5. The orchestrator already creates the PR, so no further post-implementation pipeline is needed.
+6. If worktrees were created, ask the user whether to keep or remove them.
 
 ## Anti-bottleneck
 
@@ -106,10 +105,22 @@ When presenting AskUserQuestion choices, always pre-select or recommend the most
 
 ## Additional resources
 
-- [prompts/general.md](prompts/general.md)
-- [prompts/refactor.md](prompts/refactor.md)
-- [prompts/test-coverage.md](prompts/test-coverage.md)
-- [prompts/bugfix.md](prompts/bugfix.md)
-- [prompts/docs.md](prompts/docs.md)
-- [prompts/migration.md](prompts/migration.md)
+### Pipeline prompts (used by `ralph-pipeline.sh` as `claude -p` inputs)
+
+Each prompt is a standalone `claude -p` invocation — the Ralph Loop equivalent of a subagent in `/work`:
+
+| Prompt | Phase | Equivalent `/work` subagent |
+|--------|-------|-----------------------------|
+| [pipeline-inner.md](prompts/pipeline-inner.md) | Implementation (Inner Loop) | — (interactive in `/work`) |
+| [pipeline-self-review.md](prompts/pipeline-self-review.md) | Self-review (Inner Loop) | `reviewer` |
+| [pipeline-verify.md](prompts/pipeline-verify.md) | Verify (Inner Loop) | `verifier` |
+| [pipeline-test.md](prompts/pipeline-test.md) | Test (Inner Loop) | `tester` |
+| [pipeline-outer.md](prompts/pipeline-outer.md) | Sync-docs (Outer Loop) | `doc-maintainer` |
+
+### Scripts
+- `scripts/ralph-orchestrator.sh` — Multi-worktree parallel orchestrator
+- `scripts/ralph-pipeline.sh` — Per-slice pipeline (Inner/Outer Loop)
+- `scripts/ralph` — CLI wrapper (plan/run/status/abort)
+
+### Other
 - [Recipe: Ralph Loop](../../../docs/recipes/ralph-loop.md)

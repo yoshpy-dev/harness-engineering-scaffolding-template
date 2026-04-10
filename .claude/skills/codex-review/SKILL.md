@@ -85,7 +85,7 @@ Provide a cross-model second opinion on the current diff before PR creation.
    Use AskUserQuestion:
    - Question: "Codex レビューで要対応の指摘があります。どう対応しますか？"
    - Options:
-     1. 修正する — fix ACTION_REQUIRED issues, then re-run /self-review → /verify → /test → /codex-review
+     1. 修正する — fix ACTION_REQUIRED issues, then re-run the full post-implementation pipeline: /self-review → /verify → /test → /sync-docs → /codex-review
      2. WORTH_CONSIDERING も確認する — review both ACTION_REQUIRED and WORTH_CONSIDERING, then decide
      3. 指摘を確認済み、PR を作成する — proceed to /pr
 
@@ -93,7 +93,7 @@ Provide a cross-model second opinion on the current diff before PR creation.
    Use AskUserQuestion:
    - Question: "Codex レビューで検討推奨の指摘があります（要対応はなし）。どう対応しますか？"
    - Options:
-     1. 検討して修正する — review WORTH_CONSIDERING findings, fix as needed, then re-run pipeline
+     1. 検討して修正する — review WORTH_CONSIDERING findings, fix as needed, then re-run the full post-implementation pipeline: /self-review → /verify → /test → /sync-docs → /codex-review
      2. PR を作成する — proceed to /pr
 
    **Case C — All findings DISMISSED (or no findings)**:

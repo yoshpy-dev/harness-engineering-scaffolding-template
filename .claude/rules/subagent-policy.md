@@ -1,10 +1,10 @@
 # Subagent Delegation Policy
 
-Single source of truth for when to delegate work to subagents.
+When and how to delegate work to subagents. Pipeline order is defined in `post-implementation-pipeline.md`.
 
-## Post-implementation pipeline — always delegate
+## Post-implementation pipeline for /work — delegate via subagents
 
-After implementation completes (`/work` or `/loop`), run the post-implementation pipeline via subagents:
+After `/work` completes, run the post-implementation pipeline via subagents:
 
 | Step | Subagent | Skill | Purpose |
 |------|----------|-------|---------|
@@ -45,19 +45,14 @@ If a subagent fails to execute (tool error, not a review finding), run the corre
 
 The triage step reads existing artifacts (plan, self-review report, verify report) and produces `docs/reports/codex-triage-<slug>.md`. No new subagent definition is needed.
 
-## Documentation sync — always delegate
+## Post-implementation pipeline for /loop — orchestrator-internal
 
-After implementation and before PR creation, run `/sync-docs` via the `doc-maintainer` subagent:
+Ralph Loop uses `ralph-pipeline.sh` per slice (not subagents). Same pipeline order as `/work` (see `post-implementation-pipeline.md`), but executed via `claude -p` calls with dedicated prompts.
 
-```
-Task(subagent_type="doc-maintainer", prompt="Run /sync-docs after <slug> implementation")
-  → doc-maintainer updates docs, rules, and reports as needed
-```
+After all slices are merged into the integration branch, `ralph-orchestrator.sh` runs `ralph-pipeline.sh --skip-pr --fix-all` on the integration branch as a unified quality gate. This catches cross-module issues and fixes ALL findings (including MEDIUM/LOW and WORTH_CONSIDERING) before unified PR creation.
 
-This runs after the test step and before `/pr`, producing documentation updates as a separate concern from implementation.
+Execution model difference:
+- `/work`: subagent Task calls in Claude Code session
+- `/loop`: `claude -p` invocations orchestrated by `ralph-pipeline.sh`
 
-## Rationale
-
-- Post-implementation steps produce independent artifacts with clear boundaries — ideal for subagent isolation.
-- Subagent execution preserves main context tokens for implementation work.
-- Sequential execution ensures each step can react to prior findings.
+When a user returns after a Ralph Loop run, check `./scripts/ralph status` for the final outcome rather than running the subagent chain.

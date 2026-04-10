@@ -2,6 +2,28 @@
 
 Autonomous multi-iteration coding with `claude -p` and file-system memory.
 
+## Flow overview
+
+| | 標準フロー (`/work`) | Ralph Loop (`/loop`) |
+|---|---|---|
+| **トリガー** | `/work` skill | `/loop` skill → ターミナルで `ralph run` |
+| **実装** | Claude Code セッション内で対話的 | `claude -p` で自律実行 × N slice |
+| **ブランチ** | `git checkout -b` | `git worktree add` × N |
+| **post-impl 実行モデル** | subagent Task calls (`reviewer`, `verifier`, `tester`, `doc-maintainer`) | `claude -p` × 専用プロンプト (`pipeline-self-review.md`, `pipeline-verify.md`, `pipeline-test.md`, `pipeline-outer.md`) |
+| **パイプライン順序** | `/self-review` → `/verify` → `/test` → `/sync-docs` → `/codex-review` → `/pr` | 同一 |
+| **レポート出力** | `docs/reports/` | `docs/reports/` + `.harness/state/pipeline/` (dual-write) |
+| **ユースケース** | 短〜中規模、対話的 | 大規模、分割可能、並列自律 |
+
+### Decision flow
+
+```
+/plan (フロー選択)
+  ├── 標準フロー → /work → 対話的実装 → subagent pipeline → /pr
+  └── Ralph Loop → /loop → セットアップ → ターミナルで ralph run
+        → orchestrator: worktree × N → pipeline × N (parallel)
+        → integration merge → unified PR
+```
+
 ## What is it
 
 The Ralph Loop is a pattern where a shell script repeatedly pipes a prompt file into `claude -p`, letting the agent iterate on a task across many fresh-context invocations. The file system (git, progress logs, state files) serves as the agent's persistent memory.
@@ -26,18 +48,19 @@ Named after Geoffrey Huntley's original `while :; do cat PROMPT.md | claude -p; 
 ## Quick start
 
 ```sh
-# 1. Initialize the loop
-./scripts/ralph-loop-init.sh general "Implement user authentication"
+# 1. Create a directory-based plan with slices
+./scripts/new-ralph-plan.sh <slug> [issue] [slice-count]
 
-# 2. Review the generated prompt
-cat .harness/state/loop/PROMPT.md
+# 2. Edit the plan: _manifest.md + slice-*.md files
+$EDITOR docs/plans/active/<date>-<slug>/
 
-# 3. Run the loop
-./scripts/ralph-loop.sh --verify --max-iterations 10
+# 3. Set up via /loop skill in Claude Code (or manually via ralph-loop-init.sh)
 
-# 4. Check results
-cat .harness/state/loop/status
-cat .harness/state/loop/progress.log
+# 4. Run the orchestrator
+./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --unified-pr
+
+# 5. Check results
+./scripts/ralph status
 ```
 
 ## Using the /loop skill
@@ -130,19 +153,21 @@ This means the agent reconstructs context from files each iteration, avoiding st
 ## Integration with the operating loop
 
 ```
-/plan    →  Create plan in docs/plans/active/, select /loop flow
+/plan    →  Create directory-based plan (docs/plans/active/<date>-<slug>/)
+            using ./scripts/new-ralph-plan.sh <slug> [issue] [slice-count]
   ↓
-/loop    →  Create Git Worktree, initialize Ralph Loop with plan reference
+/loop    →  Set up the Ralph Loop session
   ↓
-Terminal: ./scripts/ralph-loop.sh --verify
+Terminal: ./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --unified-pr
   ↓
-Return to Claude Code
+Orchestrator handles:
+  - Creates worktree per slice (.claude/worktrees/<slug>)
+  - Runs ralph-pipeline.sh in each worktree (parallel where no deps)
+  - Sequential merge to integration/<slug> branch
+  - Integration pipeline on merged branch (--skip-pr --fix-all)
+  - Unified PR from integration branch
   ↓
-/self-review    →  Self-review the loop's diff
-/verify        →  Spec compliance + static analysis
-/test          →  Run behavioral tests
-/codex-review  →  Cross-model second opinion (optional)
-/pr            →  Create PR, archive plan
+Return to Claude Code: check ./scripts/ralph status
 ```
 
 ## Tips
@@ -162,6 +187,40 @@ Edit `.harness/state/loop/PROMPT.md` directly after initialization. Common custo
 - Add constraints (e.g., "do not modify the public API")
 - Add acceptance criteria
 - Reference specific plan sections
+
+## Pipeline architecture
+
+Each slice in the Ralph Loop runs a full Inner/Outer Loop pipeline autonomously:
+
+```sh
+# Use the ralph CLI
+./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --unified-pr
+./scripts/ralph run --plan <dir> --dry-run      # validate setup first
+./scripts/ralph run --plan <dir> --unified-pr --max-iterations 15  # bounded
+./scripts/ralph status                          # check progress
+./scripts/ralph abort                           # safely stop and archive state
+```
+
+### Inner / Outer Loop architecture (per slice)
+
+```
+Inner Loop (per cycle):
+  implement (claude -p) → self-review (claude -p) → verify (claude -p) → test (claude -p)
+  → if tests fail: retry (up to --max-inner-cycles)
+
+Outer Loop (after tests pass):
+  sync-docs (claude -p) → codex-review → PR (claude -p)
+  → if codex ACTION_REQUIRED: regress to Inner Loop
+```
+
+Each post-implementation agent (self-review, verify, test) runs as a dedicated `claude -p` invocation with a single-responsibility prompt. Agents execute scripts internally (e.g., `run-static-verify.sh`, `run-test.sh`) and produce structured analysis — not just exit codes. Reports are dual-written to `.harness/state/pipeline/` and `docs/reports/`, with machine-readable sidecar signal files for pass/fail detection.
+
+### When to use Ralph Loop
+
+- Large-scale features or refactors that can be split into independent slices
+- Test coverage campaigns across many files
+- Migration work (dependency, framework, API)
+- When you want the full cycle handled autonomously without returning to Claude Code
 
 ## Archiving
 

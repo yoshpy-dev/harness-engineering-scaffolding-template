@@ -21,13 +21,17 @@ Build coding-agent workflows that are:
 
 1. Explore
 2. Plan (manual — creates plan, selects flow) [+ optional Codex plan advisory]
-3. Work (auto — creates branch) or Loop (auto — creates worktree)
-4. Self-review (auto — via `reviewer` subagent)
-5. Verify (auto — via `verifier` subagent)
-6. Test (auto — via `tester` subagent)
-7. Codex review (auto, optional — cross-model second opinion)
-8. PR (auto — includes hand-off)
-9. CI verify + human merge
+3. **標準フロー**: Work (auto — creates branch, interactive implementation)
+   **Ralph Loop**: Loop (auto — directory-based plan → `ralph-orchestrator.sh` → multi-worktree parallel → integration branch → integration pipeline → unified PR)
+4. Self-review (auto — via `reviewer` subagent, or pipeline-internal)
+5. Verify (auto — via `verifier` subagent, or pipeline-internal)
+6. Test (auto — via `tester` subagent, or pipeline-internal)
+7. Sync docs (auto — via `doc-maintainer` subagent, or pipeline-internal)
+8. Codex review (auto, optional — cross-model second opinion)
+9. PR (auto — includes hand-off)
+10. CI verify + human merge
+
+Steps 4–9 run via subagents in 標準フロー. In Ralph Loop, they are handled internally by the pipeline scripts.
 
 ## Source of truth
 
@@ -38,8 +42,9 @@ Build coding-agent workflows that are:
 
 ## Repo map
 
-- `docs/plans/active/` — current plans
+- `docs/plans/active/` — current plans (single files for standard flow; `<date>-<slug>/` directories with `_manifest.md` + `slice-*.md` for Ralph Loop)
 - `docs/plans/archive/` — completed plans
+- `docs/plans/templates/` — plan templates (`feature-plan.md`, `ralph-loop-manifest.md`, `ralph-loop-slice.md`)
 - `docs/reports/` — self-review, verify, test, walkthrough artifacts
 - `docs/quality/` — definition of done and quality gates
 - `.claude/rules/` — path-scoped guidance
@@ -47,7 +52,7 @@ Build coding-agent workflows that are:
 - `.claude/agents/` — specialized subagents
 - `.claude/hooks/` — deterministic runtime checks
 - `packs/languages/` — language-specific depth
-- `scripts/` — reusable verification and bootstrap scripts
+- `scripts/` — reusable verification and bootstrap scripts (includes `ralph` CLI, `ralph-pipeline.sh`, `ralph-orchestrator.sh`, `new-ralph-plan.sh`)
 - `.harness/state/` — runtime state, not canonical truth
 
 ## Planning contract
@@ -72,28 +77,11 @@ Reviews should produce artifacts, not only chat output:
 - follow-ups
 - known gaps
 
-## Verification contract
+## Verification & test contracts
 
-Prefer this order:
-1. spec compliance check against acceptance criteria
-2. linters and type checks (static analysis)
-3. documentation drift check
-4. targeted runtime commands
-5. screenshots, logs, traces, or metrics
-6. structured manual walkthrough
+See `docs/quality/definition-of-done.md` for full checklists.
 
-Never say "done" without saying what was verified and what remains unverified.
-
-## Test contract
-
-Tests should produce artifacts:
-- test execution results with pass/fail counts
-- coverage metrics
-- failure analysis with root causes
-- regression check results
-- explicit test gaps
-
-Tests must pass before PR creation.
+Key rule: never say "done" without saying what was verified and what remains unverified. Tests must pass before PR creation.
 
 ## Hard rules
 
