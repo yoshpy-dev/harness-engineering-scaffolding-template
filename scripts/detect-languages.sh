@@ -27,7 +27,7 @@ if [ -f Cargo.toml ] || find . -type f -name '*.rs' | grep -q .; then
 fi
 
 if [ -f go.mod ]; then
-  emit go
+  emit golang
 fi
 
 if [ -f pubspec.yaml ] || find . -type f -name '*.dart' | grep -q .; then
