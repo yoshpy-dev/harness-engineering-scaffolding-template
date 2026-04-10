@@ -18,6 +18,8 @@ MAX_REPAIR_ATTEMPTS=5
 DRY_RUN=0
 PREFLIGHT_ONLY=0
 RESUME=0
+SKIP_PR=0
+FIX_ALL=0
 JSON_OUTPUT_SUPPORTED=0
 
 usage() {
@@ -33,6 +35,9 @@ Options:
   --max-repair-attempts N  Max fix attempts per failing test (default: 5)
   --preflight              Run capability probe only, then exit
   --resume                 Resume from existing checkpoint.json
+  --skip-pr                Skip PR creation phase in Outer Loop
+  --fix-all                Fix ALL findings (any self-review findings override COMPLETE,
+                           WORTH_CONSIDERING treated as ACTION_REQUIRED)
   --dry-run                Print what would run without executing claude
   -h, --help               Show this help
 USAGE
@@ -45,6 +50,8 @@ while [ $# -gt 0 ]; do
     --max-inner-cycles)   shift; MAX_INNER_CYCLES="${1:?requires a number}" ;;
     --max-outer-cycles)   shift; MAX_OUTER_CYCLES="${1:?requires a number}" ;;
     --max-repair-attempts) shift; MAX_REPAIR_ATTEMPTS="${1:?requires a number}" ;;
+    --skip-pr)            SKIP_PR=1 ;;
+    --fix-all)            FIX_ALL=1 ;;
     --preflight)          PREFLIGHT_ONLY=1 ;;
     --resume)             RESUME=1 ;;
     --dry-run)            DRY_RUN=1 ;;
@@ -497,11 +504,17 @@ REVIEW
   run_claude "$_review_prompt" "$_review_log" ""
   report_event "self-review" "{\"cycle\":${_cycle},\"log\":\"${_review_log}\"}"
 
-  # Check for CRITICAL findings (3-layer detection)
+  # Check for findings (3-layer detection)
   # Layer 1: sidecar file
   _sr_critical=0
+  _sr_high=0
+  _sr_medium=0
+  _sr_low=0
   if [ -f "${PIPELINE_DIR}/.self-review-result" ]; then
     _sr_critical="$(jq -r '.critical // 0' "${PIPELINE_DIR}/.self-review-result" 2>/dev/null || echo 0)"
+    _sr_high="$(jq -r '.high // 0' "${PIPELINE_DIR}/.self-review-result" 2>/dev/null || echo 0)"
+    _sr_medium="$(jq -r '.medium // 0' "${PIPELINE_DIR}/.self-review-result" 2>/dev/null || echo 0)"
+    _sr_low="$(jq -r '.low // 0' "${PIPELINE_DIR}/.self-review-result" 2>/dev/null || echo 0)"
   fi
   # Layer 2: JSON output parse
   if [ "$_sr_critical" -eq 0 ] && [ -f "${_review_log}.json" ] && [ -s "${_review_log}.json" ]; then
@@ -514,7 +527,16 @@ REVIEW
   if [ "$_sr_critical" -gt 0 ]; then
     log "Warning: ${_sr_critical} CRITICAL finding(s) detected in self-review"
   fi
-  ckpt_update ".self_review_result = {\"critical\":${_sr_critical}}"
+  ckpt_update ".self_review_result = {\"critical\":${_sr_critical},\"high\":${_sr_high},\"medium\":${_sr_medium},\"low\":${_sr_low}}"
+
+  # --fix-all: ANY self-review findings → override COMPLETE, force retry
+  if [ "$FIX_ALL" -eq 1 ]; then
+    _sr_total=$((_sr_critical + _sr_high + _sr_medium + _sr_low))
+    if [ "$_sr_total" -gt 0 ]; then
+      log "fix-all: ${_sr_total} self-review finding(s) — overriding COMPLETE"
+      _agent_complete=0
+    fi
+  fi
 
   # --- Verify phase (agent-driven) ---
   log "--- Phase: verify ---"
@@ -699,11 +721,23 @@ DOCS
     return 1  # Signal to re-enter Inner Loop
   fi
 
+  # --fix-all: WORTH_CONSIDERING → treat as ACTION_REQUIRED
+  if [ "$FIX_ALL" -eq 1 ] && [ "$_worth_considering" -gt 0 ]; then
+    log "fix-all: ${_worth_considering} WORTH_CONSIDERING finding(s) — regressing to Inner Loop"
+    return 1
+  fi
+
   if [ "$_worth_considering" -gt 0 ]; then
     log "WORTH_CONSIDERING findings (${_worth_considering}) detected, but no ACTION_REQUIRED — proceeding to PR"
   fi
 
   # --- PR creation phase ---
+  if [ "$SKIP_PR" -eq 1 ]; then
+    log "--- Phase: PR creation (skipped — --skip-pr) ---"
+    ckpt_update '.status = "complete"'
+    return 0
+  fi
+
   log "--- Phase: PR creation ---"
   _pr_log="${PIPELINE_DIR}/outer-${_cycle}-pr.log"
   _pr_prompt="${PIPELINE_DIR}/.pr-prompt.md"
@@ -776,6 +810,8 @@ main() {
   log "Max inner cycles: ${MAX_INNER_CYCLES}"
   log "Max outer cycles: ${MAX_OUTER_CYCLES}"
   log "Max repair attempts: ${MAX_REPAIR_ATTEMPTS}"
+  log "Skip PR: ${SKIP_PR}"
+  log "Fix all: ${FIX_ALL}"
   log "Dry run: ${DRY_RUN}"
   log ""
 

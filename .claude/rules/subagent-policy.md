@@ -49,6 +49,8 @@ The triage step reads existing artifacts (plan, self-review report, verify repor
 
 Ralph Loop uses `ralph-pipeline.sh` per slice (not subagents). Same pipeline order as `/work` (see `post-implementation-pipeline.md`), but executed via `claude -p` calls with dedicated prompts.
 
+After all slices are merged into the integration branch, `ralph-orchestrator.sh` runs `ralph-pipeline.sh --skip-pr --fix-all` on the integration branch as a unified quality gate. This catches cross-module issues and fixes ALL findings (including MEDIUM/LOW and WORTH_CONSIDERING) before unified PR creation.
+
 Execution model difference:
 - `/work`: subagent Task calls in Claude Code session
 - `/loop`: `claude -p` invocations orchestrated by `ralph-pipeline.sh`
