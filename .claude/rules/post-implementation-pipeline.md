@@ -33,6 +33,15 @@ fix → /self-review → /verify → /test → /sync-docs → /codex-review
 
 Not just `/self-review → /verify → /test → /codex-review`. The `/sync-docs` step must be included because fixes may change behavior that requires documentation updates.
 
+## Integration pipeline (Ralph Loop only)
+
+After all slices are merged into the integration branch, `ralph-orchestrator.sh` runs `ralph-pipeline.sh --skip-pr --fix-all` as a unified quality gate. This follows the same canonical order above but with stricter thresholds:
+
+- `--skip-pr`: PR creation is handled by the orchestrator, not the pipeline
+- `--fix-all`: ALL self-review findings (CRITICAL+HIGH+MEDIUM+LOW > 0) override COMPLETE; WORTH_CONSIDERING codex findings trigger Inner Loop regression (same as ACTION_REQUIRED)
+
+See `.claude/rules/subagent-policy.md` for execution model details.
+
 ## Where this order is referenced
 
 If you update this order, update all of these locations:

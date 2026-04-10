@@ -48,18 +48,19 @@ Named after Geoffrey Huntley's original `while :; do cat PROMPT.md | claude -p; 
 ## Quick start
 
 ```sh
-# 1. Initialize the loop
-./scripts/ralph-loop-init.sh general "Implement user authentication"
+# 1. Create a directory-based plan with slices
+./scripts/new-ralph-plan.sh <slug> [issue] [slice-count]
 
-# 2. Review the generated prompt
-cat .harness/state/loop/PROMPT.md
+# 2. Edit the plan: _manifest.md + slice-*.md files
+$EDITOR docs/plans/active/<date>-<slug>/
 
-# 3. Run the loop
-./scripts/ralph-loop.sh --verify --max-iterations 10
+# 3. Set up via /loop skill in Claude Code (or manually via ralph-loop-init.sh)
 
-# 4. Check results
-cat .harness/state/loop/status
-cat .harness/state/loop/progress.log
+# 4. Run the orchestrator
+./scripts/ralph run --plan docs/plans/active/<date>-<slug>/ --unified-pr
+
+# 5. Check results
+./scripts/ralph status
 ```
 
 ## Using the /loop skill
