@@ -71,11 +71,9 @@ Turn an abstract idea into a detailed specification.
    - Write the spec file to `docs/specs/<date>-<slug>.md`
 
    **GitHub issue creation** (options 1, 3):
-   - Run: `gh issue create --title "<spec title>" --body "$(cat docs/specs/<date>-<slug>.md)"`
+   - Save the spec file first (always, as fallback), then run: `gh issue create --title "<spec title>" --body-file docs/specs/<date>-<slug>.md`
    - If `gh` fails (auth error, network issue):
-     a. Save the spec to `docs/specs/<date>-<slug>.md` as fallback
-     b. Warn the user: "GitHub issue の作成に失敗しました。仕様書は docs/specs/<date>-<slug>.md に保存しました。"
-   - If option 1 only (no file save requested): still save the file as fallback before attempting issue creation
+     a. Warn the user: "GitHub issue の作成に失敗しました。仕様書は docs/specs/<date>-<slug>.md に保存済みです。"
 
    **Plan transition** (option 4):
    - After saving the spec file, invoke: `Skill(skill="plan")`
