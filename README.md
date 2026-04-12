@@ -43,6 +43,7 @@ The default philosophy here is:
 │   ├── architecture/
 │   ├── quality/
 │   ├── plans/
+│   ├── specs/
 │   ├── reports/
 │   ├── evidence/
 │   ├── recipes/
@@ -78,7 +79,7 @@ The default philosophy here is:
    ```
 
 4. In Claude Code, follow the loop:
-   - `/plan` → `/work` (or `/loop`) → `/self-review` → `/verify` → `/test` → `/codex-review` (optional) → `/pr`
+   - `/spec` (optional) → `/plan` → `/work` (or `/loop`) → `/self-review` → `/verify` → `/test` → `/codex-review` (optional) → `/pr`
 
 5. Before claiming a task is done, run:
 
@@ -88,11 +89,17 @@ The default philosophy here is:
 
 ## Operating loop
 
-This scaffold assumes the following default loop. Only `/plan` is a manual trigger; all other steps are auto-invoked.
+This scaffold assumes the following default loop. `/spec` and `/plan` are manual triggers; all other steps are auto-invoked.
 
 1. **Explore**
    - Read relevant code, docs, rules, and open plans
    - Decide whether the task is small enough to stay single-session
+
+1.5. **Spec** (manual, optional — `/spec`)
+   - Use when the request is too vague for `/plan`
+   - Explores the codebase, researches best practices, and clarifies requirements interactively
+   - Produces a spec file in `docs/specs/` and optionally creates a GitHub issue
+   - Can hand off directly to `/plan` after completion
 
 2. **Plan** (manual — `/plan`)
    - Create or refresh a file-backed plan in `docs/plans/active/`

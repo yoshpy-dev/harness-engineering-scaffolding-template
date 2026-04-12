@@ -43,6 +43,7 @@ Steps 4–9 run via subagents in 標準フロー. In Ralph Loop, they are handle
 
 ## Repo map
 
+- `docs/specs/` — spec files produced by `/spec` (`<date>-<slug>.md`)
 - `docs/plans/active/` — current plans (single files for standard flow; `<date>-<slug>/` directories with `_manifest.md` + `slice-*.md` for Ralph Loop)
 - `docs/plans/archive/` — completed plans
 - `docs/plans/templates/` — plan templates (`feature-plan.md`, `ralph-loop-manifest.md`, `ralph-loop-slice.md`)
