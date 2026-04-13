@@ -48,13 +48,22 @@ Turn an abstract idea into a detailed specification.
    - User preferences and constraints
    - Repeat this step as many times as needed. Do not guess when you can ask.
 
-5. **Draft the spec**: Create `docs/specs/<date>-<slug>.md` from [template.md](template.md):
-   - Fill in all sections with findings from steps 2-4
+5. **Draft the spec** (in memory — do NOT write to file yet):
+   - Compose the full spec content from [template.md](template.md) using findings from steps 2-4
    - Include trade-off analysis with rationale
    - List resolved and remaining open questions
    - Add references to research sources
+   - Keep the draft in memory for user review in the next step
 
-6. **Review with user**: Present the draft spec summary and use `AskUserQuestion` for final confirmation or adjustments.
+6. **Final review with user**: Present the draft spec to the user for approval before any file or issue creation.
+   - Show a structured summary covering: 概要、機能要件（箇条書き）、受け入れ基準、スコープ内/外、未解決の課題
+   - Use `AskUserQuestion` to ask:
+     - Question: "上記の仕様内容で確定してよろしいですか？"
+     - Options:
+       1. **承認** — この内容で確定する
+       2. **修正あり** — フィードバックを反映してから確定する
+   - If the user selects "修正あり": apply the feedback to the in-memory draft and repeat this step
+   - If the user selects "承認": proceed to step 7
 
 7. **Output selection**: Use `AskUserQuestion` to ask:
    - Question: "仕様がまとまりました。どのように処理しますか？"
@@ -64,11 +73,11 @@ Turn an abstract idea into a detailed specification.
      3. **仕様書ファイルを保存 + GitHub issue を起票** — 両方実行する
      4. **仕様書ファイルを保存 + /plan へ移行** — 保存後、そのまま実装計画フェーズに進む
 
-8. **Execute the chosen path**:
+8. **Execute the chosen path** (write only after user approval in step 6):
 
    **File save** (options 2, 3, 4):
    - Ensure `docs/specs/` directory exists
-   - Write the spec file to `docs/specs/<date>-<slug>.md`
+   - Write the approved spec to `docs/specs/<date>-<slug>.md`
 
    **GitHub issue creation** (options 1, 3):
    - Save the spec file first (always, as fallback), then run: `gh issue create --title "<spec title>" --body-file docs/specs/<date>-<slug>.md`
