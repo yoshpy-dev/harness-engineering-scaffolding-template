@@ -196,7 +196,7 @@ For large tasks that can be split into independent slices, the Ralph Loop runs p
 
 Or use the `/loop` skill inside Claude Code for interactive setup.
 
-Safety rails include iteration limits, stuck detection (3 consecutive no-change iterations), Inner/Outer Loop architecture with repair attempt caps, and hook parity checks.
+Safety rails include iteration limits, stuck detection (3 consecutive no-change iterations), Inner/Outer Loop architecture with repair attempt caps, slice timeout detection, signal handlers for clean shutdown, and hook parity checks. All pipeline settings (model, effort, permission mode, iteration caps, timeouts) are configurable via environment variables through `scripts/ralph-config.sh`.
 
 See `docs/recipes/ralph-loop.md` for the full guide.
 

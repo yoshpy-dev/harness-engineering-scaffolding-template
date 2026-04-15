@@ -53,7 +53,7 @@ Steps 4–9 run via subagents in 標準フロー. In Ralph Loop, they are handle
 - `.claude/agents/` — specialized subagents
 - `.claude/hooks/` — deterministic runtime checks
 - `packs/languages/` — language-specific depth
-- `scripts/` — reusable verification and bootstrap scripts (includes `ralph` CLI, `ralph-pipeline.sh`, `ralph-orchestrator.sh`, `new-ralph-plan.sh`)
+- `scripts/` — reusable verification and bootstrap scripts (includes `ralph` CLI, `ralph-config.sh`, `ralph-pipeline.sh`, `ralph-orchestrator.sh`, `new-ralph-plan.sh`)
 - `.harness/state/` — runtime state, not canonical truth
 
 ## Planning contract
