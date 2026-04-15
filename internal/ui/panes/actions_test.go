@@ -158,7 +158,7 @@ func TestActionsModel_RunningSliceActions(t *testing.T) {
 
 func TestActionsModel_CompleteSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	completeSlice := &state.SliceState{
+	completeSlice := state.SliceState{
 		Name:         "slice-3",
 		Status:       state.StatusComplete,
 		LogPath:      "/tmp/logs/slice-3.log",
@@ -189,7 +189,7 @@ func TestActionsModel_CompleteSliceActions(t *testing.T) {
 
 func TestActionsModel_PendingSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	pendingSlice := &state.SliceState{
+	pendingSlice := state.SliceState{
 		Name:   "slice-4",
 		Status: state.StatusPending,
 	}
@@ -234,7 +234,7 @@ func TestActionsModel_PendingSliceActions(t *testing.T) {
 
 func TestActionsModel_StuckSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	stuckSlice := &state.SliceState{
+	stuckSlice := state.SliceState{
 		Name:         "slice-5",
 		Status:       state.StatusStuck,
 		LogPath:      "/tmp/logs/slice-5.log",
