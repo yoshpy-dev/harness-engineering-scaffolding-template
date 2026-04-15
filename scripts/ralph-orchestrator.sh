@@ -842,7 +842,7 @@ ORCH_JSON
               if [ -f "$_pid_file" ]; then
                 _spid="$(cat "$_pid_file" | tr -d '[:space:]')"
                 kill "$_spid" 2>/dev/null || true
-                rm -f "$_pid_file"
+                # Keep .pid file so cleanup_on_exit can re-kill if process lingers
               fi
               echo "timeout" > "${ORCH_STATE}/slice-${_rf_s}.status"
               _failed=$((_failed + 1))
