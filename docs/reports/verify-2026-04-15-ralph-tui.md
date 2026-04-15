@@ -1,69 +1,86 @@
-# Verify report: ralph-tui
+# Verify report: ralph-tui (cycle 2)
 
 - Date: 2026-04-15
-- Plan: docs/plans/active/2026-04-15-ralph-tui/slice-6-ralph-tui.md
+- Plan: docs/plans/active/2026-04-15-ralph-tui/_manifest.md (slice-6)
 - Verifier: pipeline-verify (autonomous)
 - Scope: spec compliance + static analysis + documentation drift
-- Evidence: `docs/evidence/verify-2026-04-15-ralph-tui.log`
+- Evidence: `docs/evidence/verify-2026-04-15-ralph-tui-c2.log`
 
 ## Spec compliance
 
 | Acceptance criterion | Status | Evidence |
 | --- | --- | --- |
-| `cmd/ralph-tui/main.go` initializes all components and starts TUI with `tea.NewProgram` | met | main.go imports state/watcher/ui/action, calls `state.ReadFullStatus()`, `watcher.New()`, `action.NewExecutor()`, `ui.New()`, and `tea.NewProgram(model)` at line 79 |
-| `go build -o bin/ralph-tui ./cmd/ralph-tui` produces single binary | met | Build succeeds with exit 0 |
-| Binary size < 30MB with `-ldflags="-s -w"` | met | 4.0 MB with ldflags (5.7 MB without) |
-| `--version` flag shows git commit hash | met | Output: `ralph-tui dev (commit: 085196e, built: 2026-04-15T08:52:06Z)` |
-| `--no-tui` flag in `cmd_status()` | met | scripts/ralph line 149: `--no-tui) _no_tui=1` |
-| TTY + binary + no `--no-tui` → TUI launch | met | scripts/ralph line 176: TTY detection + binary existence + outdated check |
-| Non-TTY or `--no-tui` → table output | met | Falls through to table output at line 199+ |
-| `--json` → existing JSON output (no TUI impact) | met | JSON mode returns at line 171 before TUI check |
-| Binary missing → table fallback | met | `[ -x "$_tui_bin" ]` check at line 176 |
-| Outdated binary → warning + fallback | met | `find -newer` check at line 178, warning at line 180 |
-| `ralph retry <slice-name>` subcommand exists | met | `cmd_retry()` at line 220 |
-| `retry` validates PID/status/locklist/parallel limit | partially met | Status check (lines 237-257), orchestrator check (261-264), parallel limit (267-285) implemented. **Locklist conflict check and dependency check are NOT implemented** despite being listed in the implementation outline (steps b and d) and the AC text. |
-| `ralph abort --slice <name>` flag exists | met | `--slice` flag at line 321 |
-| `abort --slice` limits existing abort flow to single slice | met | PID kill (340-347), state archive (372-379), worktree removal (402-407), audit log (431-442) all scoped to target slice |
-| `build-tui.sh` builds to `bin/ralph-tui` | met | build-tui.sh line 33-44: `go build ... -o "$_output" ./cmd/ralph-tui` |
-| `.gitignore` has `bin/` | met | .gitignore line 7 |
+| `cmd/ralph-tui/main.go` が全コンポーネントを初期化し `tea.NewProgram` で TUI を起動すること | met | `main.go:56-82`: state.ReadFullStatus, watcher.New, action.NewExecutor, ui.New all initialized; `tea.NewProgram(model)` at line 79 |
+| `go build -o bin/ralph-tui ./cmd/ralph-tui` で単一バイナリが生成されること | met | `go build -ldflags="-s -w" -o /tmp/ralph-tui-verify ./cmd/ralph-tui` succeeded (exit 0) |
+| バイナリサイズが 30MB 以下であること (`-ldflags="-s -w"` 適用) | met | 4.3MB (well under 30MB threshold) |
+| バイナリに `--version` フラグがあり、ビルド時の git commit hash を表示すること | met | `version.go:6-10`: Version/GitCommit/BuildDate vars via ldflags; `main.go:22-28`: `--version` flag handler; `build-tui.sh:42`: `-X main.GitCommit=${_commit}` |
+| `scripts/ralph` の `cmd_status()` に `--no-tui` フラグが追加されていること | met | `scripts/ralph:149`: `--no-tui) _no_tui=1` |
+| TTY 検出: TTY + バイナリ存在 + `--no-tui` 未指定 → TUI 起動 | met | `scripts/ralph:176`: `if [ "$_no_tui" -eq 0 ] && [ -t 1 ] && [ -x "$_tui_bin" ]` with source-freshness check before `exec` |
+| 非 TTY または `--no-tui` → 既存テーブル出力 | met | `scripts/ralph:199-213`: Falls through to `_render_table` when TUI conditions not met |
+| `--json` → 既存 JSON 出力 (TUI に影響しない) | met | `scripts/ralph:158-171`: JSON mode handled before TUI check, calls `_render_json` directly |
+| TUI バイナリが存在しない場合に既存出力にフォールバックすること | met | `scripts/ralph:176`: `[ -x "$_tui_bin" ]` check; missing binary falls through to table output |
+| TUI バイナリが Go ソースより古い場合に警告を表示してからフォールバックすること | met | `scripts/ralph:178-181`: `find ... -newer "$_tui_bin"` with stderr warning, falls through to table output |
+| `scripts/ralph retry <slice-name>` サブコマンドが新設されていること | met | `scripts/ralph:220-309`: `cmd_retry()` function; dispatched at line 468 |
+| `retry` がオーケストレータの PID/status/locklist/並列制限を検証してから実行すること | partially met | Status check (lines 236-257), orchestrator state (260-264), parallel limit (267-285), worktree existence (288-292) implemented. **Missing**: locklist conflict check (plan step b) and dependency completion check (plan step d) |
+| `scripts/ralph abort --slice <slice-name>` フラグが追加されていること | met | `scripts/ralph:321`: `--slice) shift; _target_slice="${1:?requires slice name}"` |
+| `abort --slice` が既存 abort フロー（アーカイブ・監査ログ）を単一スライスに限定して実行すること | met | Lines 339-442: single-slice PID kill, state archive, worktree removal, audit JSON — all scoped to `_target_slice` |
+| `scripts/build-tui.sh` が `go build` を実行し `bin/ralph-tui` にバイナリを配置すること | met | `build-tui.sh:41-44`: `go build ... -o "$_output" "${REPO_ROOT}/cmd/ralph-tui"` where `_output="${REPO_ROOT}/bin/ralph-tui"` |
+| `.gitignore` に `bin/` が追加されていること | met | `.gitignore:7`: `bin/` |
+
+**Summary**: 15 met, 1 partially met, 0 not met (out of 16 acceptance criteria)
 
 ## Static analysis
 
 | Command | Result | Notes |
 | --- | --- | --- |
-| `go vet ./...` | pass | Clean, no warnings |
-| `go build ./cmd/ralph-tui` | pass | Exit 0, binary produced |
-| `gofmt` | pass | 0 issues |
-| `./scripts/run-static-verify.sh` | pass | All verifiers passed |
+| `go vet ./...` | pass | No issues found |
+| `go build ./cmd/ralph-tui` | pass | Binary: 4.3MB (stripped) |
+| `gofmt -l cmd/ internal/` | pass | No formatting issues |
+| `./scripts/run-static-verify.sh` | pass | Go verifier passed (gofmt + go vet + go test compilation) |
 
 ## Documentation drift
 
 | Doc / contract | In sync? | Notes |
 | --- | --- | --- |
-| `CLAUDE.md` | yes | No TUI-specific additions needed per manifest ("スコープ外") |
-| `AGENTS.md` | yes | No TUI-specific additions needed per manifest |
-| `.claude/rules/` | yes | No rules reference TUI behavior; existing rules unaffected |
-| `README.md` | yes | `ralph status` / `ralph abort` usage still correct; new subcommands (retry, --no-tui) are additive |
-| `docs/plans/active/2026-04-15-ralph-tui/_manifest.md` | yes | Manifest scope and dependency graph match implementation |
-| `scripts/ralph` help text | yes | Usage block includes retry, --no-tui, abort --slice |
+| `CLAUDE.md` | yes | No TUI mentions needed (confirmed by plan: "スコープ外のため") |
+| `AGENTS.md` | yes | No TUI mentions needed (confirmed by plan) |
+| `.claude/rules/architecture.md` | yes | No TUI-specific rules needed |
+| `.claude/rules/testing.md` | yes | No changes needed |
+| `README.md` | likely yes | Plan does not list README as requiring updates; TUI is an internal tool |
+| `docs/plans/active/2026-04-15-ralph-tui/_manifest.md` | yes | Progress reflects current state |
+| `.gitignore` | partial drift | `coverage.out` is tracked in git but not in `.gitignore` (identified by self-review CRITICAL) |
 
 ## Observational checks
 
-- **Bubble Tea v2 API**: main.go uses `tea.View` struct with `AltScreen` field (v2 pattern) instead of `tea.WithAltScreen()` option (v1 pattern). This is correct for the v2 API.
-- **State injection**: Initial state is set via `m.ui.Panes.Slices = fmt.Sprintf(...)` (string, not structured data). Full structured state comes via `StateUpdatedMsg` on first watcher event. This works but is a weak initial render.
-- **Error handling in Update**: `appModel.Update` silently discards `ReadFullStatus` errors (self-review MEDIUM finding, not a spec violation).
-- **No test files for `cmd/ralph-tui/`**: Static analysis confirms `[no test files]`. Tests for this package are deferred to integration-level tests per the plan.
+### Self-review CRITICAL findings (cross-validated)
+
+1. **coverage.out tracked in git**: Confirmed. `git ls-files -- coverage.out` returns a match. 654 lines of generated test coverage data. Not in `.gitignore`. This is a repo hygiene issue, not a spec compliance failure, but should be fixed before merge.
+
+2. **SelfReviewResult type mismatch**: Confirmed. `internal/state/types.go:86` declares `SelfReviewResult *string` but `.harness/state/pipeline/checkpoint.json` writes `"self_review_result": {"critical": 2, "high": 0, "medium": 3, "low": 2}` (an object, not a string). This will cause `json.Unmarshal` to silently fail for any checkpoint that has gone through self-review. Test data uses `null`, masking the bug.
+
+### Retry command gap
+
+`cmd_retry()` is missing two checks specified in the implementation outline:
+- **Locklist conflict check** (plan step b): Should verify that no currently-running slice shares locked files with the target slice
+- **Dependency completion check** (plan step d): Should verify that all dependency slices (from the manifest dependency graph) have status `complete`
+
+These are safety checks that prevent retry from creating race conditions or starting work with unmet prerequisites.
+
+### Executor error swallowing
+
+`main.go:72-73`: If `action.NewExecutor(repoRoot)` fails, the error is silently discarded and `executor` remains nil. All actions would then fail with no user feedback. (MEDIUM finding from self-review, not a spec compliance issue.)
 
 ## Coverage gaps
 
-- **Locklist conflict check in retry**: The AC mentions "locklist" as a validation the retry command should perform. The implementation outline (step b) describes checking for shared-file conflicts with currently running slices. This check is absent. **Risk**: a retried slice could write to the same shared files as a running slice, causing data races.
-- **Dependency check in retry**: The implementation outline (step d) describes verifying all dependencies are complete before retry. This check is absent. **Risk**: a retried slice could start before its dependencies are complete, causing build or test failures.
-- **Build script end-to-end**: `scripts/build-tui.sh` was not executed in this verification (only direct `go build` was tested). The script's Go version check and ldflags injection were verified by reading the source.
+- **Behavioral verification**: Cannot verify TUI rendering, keybind handling, or pane layout without running the binary interactively or via teatest. This is the test agent's responsibility.
+- **Regression verification**: Cannot verify that `ralph status --json` output is identical to pre-change output without a baseline snapshot. This is the test agent's responsibility.
+- **Build script**: `scripts/build-tui.sh` was not executed in this verification run (would require Go toolchain and modify `bin/`). Build was verified directly via `go build`.
+- **Locklist and dependency checks in retry**: Cannot verify because they are not implemented.
 
 ## Verdict
 
-- Verified: AC 1-11, AC 13-16 (15 of 16 acceptance criteria fully met)
-- Partially verified: AC 12 (retry validates status and parallel limit, but missing locklist and dependency checks)
-- Not verified: None (all criteria have evidence)
+- **Verified** (15 AC): main.go initialization, go build, binary size, --version, --no-tui, TTY detection, non-TTY fallback, --json, binary-missing fallback, outdated-binary warning, retry subcommand exists, abort --slice flag, abort --slice scoping, build-tui.sh, .gitignore bin/
+- **Partially verified** (1 AC): retry validation (status + parallel limit verified; locklist + dependency checks missing)
+- **Not verified** (0 AC): none
 
-**Overall**: **partial** — 15/16 criteria fully met, 1/16 partially met due to missing locklist and dependency validation in `cmd_retry()`.
+**Overall verdict: partial** — all acceptance criteria are met or partially met, but 2 CRITICAL self-review findings (coverage.out, SelfReviewResult type) remain unfixed and the retry command is missing 2 planned safety checks.
