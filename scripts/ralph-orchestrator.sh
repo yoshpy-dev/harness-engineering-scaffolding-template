@@ -716,7 +716,16 @@ ORCH_JSON
         while IFS= read -r dep; do
           _dep_slug="$(echo "$dep" | tr -d ' []' | tr '[:upper:]' '[:lower:]' | sed 's/^slice[- ]*//')"
           [ -z "$_dep_slug" ] && continue
-          _dep_status="$(check_slice_status "$_dep_slug")"
+          # Resolve short dep slug to full slug (e.g., "1" -> "1-ralph-tui")
+          # The dep field may use short names like "slice-1" while actual slugs
+          # include a suffix like "1-ralph-tui". Match by prefix.
+          _resolved_slug="$_dep_slug"
+          while IFS='|' read -r _rs _ro _rd _rf _rp; do
+            case "$_rs" in
+              "${_dep_slug}"-*|"${_dep_slug}") _resolved_slug="$_rs"; break ;;
+            esac
+          done < "$_slices_file"
+          _dep_status="$(check_slice_status "$_resolved_slug")"
           if [ "$_dep_status" != "complete" ]; then
             _deps_met=0
             break
