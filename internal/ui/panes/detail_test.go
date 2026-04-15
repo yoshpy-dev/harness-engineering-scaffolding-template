@@ -11,9 +11,9 @@ import (
 func TestDetailViewFields(t *testing.T) {
 	m := NewDetail(60, 20)
 	s := state.SliceState{
-		Name:       "slice-1",
-		Status:     state.StatusRunning,
-		Phase:      "inner",
+		Name:        "slice-1",
+		Status:      state.StatusRunning,
+		Phase:       "inner",
 		InnerCycle:  2,
 		ElapsedSecs: 125,
 		TestResult:  "pass",
@@ -72,8 +72,8 @@ func TestDetailSliceSelectedMsg(t *testing.T) {
 func TestDetailCycleWithoutMax(t *testing.T) {
 	m := NewDetail(60, 20)
 	s := state.SliceState{
-		Name:   "test",
-		Status: state.StatusRunning,
+		Name:       "test",
+		Status:     state.StatusRunning,
 		InnerCycle: 3,
 	}
 	m.SetSlice(&s)
@@ -87,8 +87,8 @@ func TestDetailCycleWithoutMax(t *testing.T) {
 func TestDetailNoCycleNoPhasePRTestResult(t *testing.T) {
 	m := NewDetail(60, 20)
 	s := state.SliceState{
-		Name:    "minimal",
-		Status:  state.StatusPending,
+		Name:        "minimal",
+		Status:      state.StatusPending,
 		ElapsedSecs: 0,
 	}
 	m.SetSlice(&s)

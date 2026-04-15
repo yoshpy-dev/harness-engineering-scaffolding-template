@@ -76,7 +76,7 @@ func main() {
 	// Build the TUI model.
 	model := newAppModel(status, w, executor, absOrchDir, absWorktreeBase, absPlanDir)
 
-	p := tea.NewProgram(model, tea.WithAltScreen())
+	p := tea.NewProgram(model)
 	if _, err := p.Run(); err != nil {
 		log.Fatalf("TUI error: %v", err)
 	}
@@ -180,6 +180,8 @@ func (m *appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *appModel) View() string {
-	return m.ui.View()
+func (m *appModel) View() tea.View {
+	v := m.ui.View()
+	v.AltScreen = true
+	return v
 }

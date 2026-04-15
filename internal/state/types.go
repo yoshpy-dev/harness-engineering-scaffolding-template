@@ -33,13 +33,13 @@ type OrchestratorState struct {
 // SliceState represents the status of a single slice, read from slice-<name>.status files
 // and enriched with checkpoint data.
 type SliceState struct {
-	Name        string              `json:"name"`
-	Status      string              `json:"status"`
-	Phase       string              `json:"phase"`
-	InnerCycle  int                 `json:"cycle"`
-	ElapsedSecs int64               `json:"elapsed_seconds"`
-	TestResult  string              `json:"test_result"`
-	PRUrl       string              `json:"pr_url"`
+	Name         string              `json:"name"`
+	Status       string              `json:"status"`
+	Phase        string              `json:"phase"`
+	InnerCycle   int                 `json:"cycle"`
+	ElapsedSecs  int64               `json:"elapsed_seconds"`
+	TestResult   string              `json:"test_result"`
+	PRUrl        string              `json:"pr_url"`
 	PID          int                 `json:"pid,omitempty"`
 	StartedAt    *time.Time          `json:"started_at,omitempty"`
 	Checkpoint   *PipelineCheckpoint `json:"checkpoint,omitempty"`

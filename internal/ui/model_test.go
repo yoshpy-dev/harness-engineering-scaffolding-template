@@ -54,9 +54,9 @@ func TestRightPane(t *testing.T) {
 	}{
 		{PaneSlices, PaneDetail},
 		{PaneDetail, PaneDeps},
-		{PaneDeps, PaneDeps},     // edge: stays
+		{PaneDeps, PaneDeps}, // edge: stays
 		{PaneActions, PaneLogs},
-		{PaneLogs, PaneLogs},     // edge: stays
+		{PaneLogs, PaneLogs}, // edge: stays
 	}
 	for _, tt := range tests {
 		got := RightPane(tt.input)
@@ -71,7 +71,7 @@ func TestLeftPane(t *testing.T) {
 		input Pane
 		want  Pane
 	}{
-		{PaneSlices, PaneSlices},   // edge: stays
+		{PaneSlices, PaneSlices}, // edge: stays
 		{PaneDetail, PaneSlices},
 		{PaneDeps, PaneDetail},
 		{PaneActions, PaneActions}, // edge: stays
