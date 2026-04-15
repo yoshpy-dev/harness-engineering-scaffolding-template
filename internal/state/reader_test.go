@@ -385,8 +385,8 @@ func TestReadFullStatus(t *testing.T) {
 	if slice1.Phase != "inner" {
 		t.Errorf("slice1 phase = %q, want inner", slice1.Phase)
 	}
-	if slice1.InnerCycle != 2 {
-		t.Errorf("slice1 inner_cycle = %d, want 2", slice1.InnerCycle)
+	if slice1.Cycle != 2 {
+		t.Errorf("slice1 inner_cycle = %d, want 2", slice1.Cycle)
 	}
 
 	var slice2 *SliceState

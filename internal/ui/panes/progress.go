@@ -40,7 +40,7 @@ func (m ProgressModel) Init() tea.Cmd {
 func (m ProgressModel) Update(msg tea.Msg) (ProgressModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case ui.StateUpdatedMsg:
-		m.slices = msg.Status.Orchestrator.Slices
+		m.slices = msg.Status.Slices
 	}
 	return m, nil
 }

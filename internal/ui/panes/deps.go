@@ -66,7 +66,7 @@ func (m DepsModel) Update(msg tea.Msg) (DepsModel, tea.Cmd) {
 		m.selected = msg.Slice.Name
 	case ui.StateUpdatedMsg:
 		m.deps = msg.Status.Dependencies
-		m.slices = msg.Status.Orchestrator.Slices
+		m.slices = msg.Status.Slices
 	}
 	return m, nil
 }

@@ -173,9 +173,8 @@ func TestProgressStateUpdatedMsg(t *testing.T) {
 	}
 	m, _ = m.Update(ui.StateUpdatedMsg{
 		Status: state.FullStatus{
-			Orchestrator: state.OrchestratorState{
-				Slices: newSlices,
-			},
+			Orchestrator: &state.OrchestratorState{},
+			Slices:       newSlices,
 		},
 	})
 

@@ -1,18 +1,21 @@
-<<<<<<< HEAD
 package ui
 
-import "charm.land/lipgloss/v2"
+import (
+	"image/color"
+
+	"charm.land/lipgloss/v2"
+)
 
 // Color constants used across the TUI.
 var (
-	ColorFocusBorder   = lipgloss.Color("62")  // purple
-	ColorNormalBorder   = lipgloss.Color("240") // gray
-	ColorTitle          = lipgloss.Color("170") // pink
-	ColorStatusOK       = lipgloss.Color("42")  // green
-	ColorStatusFail     = lipgloss.Color("196") // red
-	ColorStatusRunning  = lipgloss.Color("214") // orange
-	ColorStatusPending  = lipgloss.Color("245") // dim gray
-	ColorProgress       = lipgloss.Color("62")  // purple
+	ColorFocusBorder  = lipgloss.Color("62")  // purple
+	ColorNormalBorder  = lipgloss.Color("240") // gray
+	ColorTitle         = lipgloss.Color("170") // pink
+	ColorStatusOK      = lipgloss.Color("42")  // green
+	ColorStatusFail    = lipgloss.Color("196") // red
+	ColorStatusRunning = lipgloss.Color("214") // orange
+	ColorStatusPending = lipgloss.Color("245") // dim gray
+	ColorProgress      = lipgloss.Color("62")  // purple
 )
 
 // PaneStyle returns the border style for a pane.
@@ -57,15 +60,6 @@ func HelpOverlayStyle() lipgloss.Style {
 		BorderForeground(ColorFocusBorder).
 		Padding(1, 2)
 }
-||||||| 085ae31
-=======
-package ui
-
-import (
-	"image/color"
-
-	"charm.land/lipgloss/v2"
-)
 
 // StatusIcon returns the icon character for a given slice status.
 func StatusIcon(status string) string {
@@ -112,4 +106,3 @@ func PhaseColor(phase string) color.Color {
 		return lipgloss.Color("#808080")
 	}
 }
->>>>>>> slice/2026-04-15-ralph-tui/4-ralph-tui

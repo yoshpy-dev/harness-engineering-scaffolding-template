@@ -174,16 +174,16 @@ func ReadFullStatus(orchDir, worktreeBase, planDir string) (*FullStatus, error) 
 		if err == nil {
 			ss.Checkpoint = checkpoint
 			ss.Phase = checkpoint.Phase
-			ss.InnerCycle = checkpoint.InnerCycle
+			ss.Cycle = checkpoint.InnerCycle
 			if checkpoint.LastTestResult != nil {
 				ss.TestResult = *checkpoint.LastTestResult
 			}
 			if checkpoint.PRUrl != nil {
-				ss.PRUrl = *checkpoint.PRUrl
+				ss.PRURL = *checkpoint.PRUrl
 			}
 
 			if t, err := checkpoint.FirstTransitionTime(); err == nil && !t.IsZero() {
-				ss.ElapsedSecs = int64(now.Sub(t).Seconds())
+				ss.Elapsed = int(now.Sub(t).Seconds())
 			}
 		} else {
 			// No checkpoint — derive phase from status
