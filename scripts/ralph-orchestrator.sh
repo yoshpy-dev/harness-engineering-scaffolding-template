@@ -10,14 +10,19 @@ set -eu
 # Requires: git, jq, ralph-pipeline.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "${SCRIPT_DIR}/ralph-config.sh"
+
 WORKTREE_BASE=".claude/worktrees"
 ORCH_STATE=".harness/state/orchestrator"
 EVIDENCE_DIR="docs/evidence"
 PLAN_FILE=""
-MAX_PARALLEL=4
-MAX_ITERATIONS=20
+MAX_PARALLEL="$RALPH_MAX_PARALLEL"
+MAX_ITERATIONS="$RALPH_MAX_ITERATIONS"
 DRY_RUN=0
 UNIFIED_PR=0
+
+# Child PID tracking for cleanup
+_CHILD_PIDS=""
 
 usage() {
   cat <<'USAGE'
@@ -39,8 +44,8 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     --plan)            shift; PLAN_FILE="${1:?requires a file path}" ;;
-    --max-parallel)    shift; MAX_PARALLEL="${1:?requires a number}" ;;
-    --max-iterations)  shift; MAX_ITERATIONS="${1:?requires a number}" ;;
+    --max-parallel)    shift; MAX_PARALLEL="${1:?requires a number}"; validate_numeric "--max-parallel" "$MAX_PARALLEL" ;;
+    --max-iterations)  shift; MAX_ITERATIONS="${1:?requires a number}"; validate_numeric "--max-iterations" "$MAX_ITERATIONS" ;;
     --unified-pr)      UNIFIED_PR=1 ;;
     --dry-run)         DRY_RUN=1 ;;
     -h|--help)         usage ;;
@@ -68,6 +73,48 @@ ts() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 ts_file() { date -u '+%Y-%m-%d-%H%M%S'; }
 log() { printf '[%s] %s\n' "$(ts)" "$*"; }
 log_error() { printf '[%s] ERROR: %s\n' "$(ts)" "$*" >&2; }
+
+# ═══════════════════════════════════════════════════════════════════
+# Signal handling and cleanup
+# ═══════════════════════════════════════════════════════════════════
+
+# Register a child PID for cleanup tracking
+register_child() {
+  _CHILD_PIDS="${_CHILD_PIDS:+${_CHILD_PIDS} }$1"
+}
+
+# Kill tracked child processes and update orchestrator status
+cleanup_on_exit() {
+  _exit_code=$?
+  # Kill all tracked child PIDs
+  for _cpid in $_CHILD_PIDS; do
+    if kill -0 "$_cpid" 2>/dev/null; then
+      kill "$_cpid" 2>/dev/null || true
+      log "Killed child process: $_cpid"
+    fi
+  done
+  # Also kill any PIDs recorded in state files
+  for _pf in "${ORCH_STATE}"/slice-*.pid; do
+    [ -f "$_pf" ] || continue
+    _spid="$(cat "$_pf" 2>/dev/null || true)"
+    [ -z "$_spid" ] && continue
+    if kill -0 "$_spid" 2>/dev/null; then
+      kill "$_spid" 2>/dev/null || true
+      log "Killed slice process: $_spid"
+    fi
+    rm -f "$_pf"
+  done
+  # Update orchestrator.json status if interrupted
+  if [ -f "${ORCH_STATE}/orchestrator.json" ] && [ "$_exit_code" -ne 0 ]; then
+    if command -v jq >/dev/null 2>&1; then
+      jq --arg s "interrupted" '.status = $s | .ended = "'"$(ts)"'"' \
+        "${ORCH_STATE}/orchestrator.json" > "${ORCH_STATE}/orchestrator.tmp.json" 2>/dev/null \
+        && mv "${ORCH_STATE}/orchestrator.tmp.json" "${ORCH_STATE}/orchestrator.json" 2>/dev/null || true
+    fi
+  fi
+}
+
+trap cleanup_on_exit INT TERM EXIT
 
 # ═══════════════════════════════════════════════════════════════════
 # Plan parsing — extract slices from markdown
@@ -347,6 +394,8 @@ run_slice() {
   _pid=$!
   echo "$_pid" > "${ORCH_STATE}/slice-${_slug}.pid"
   echo "running" > "${ORCH_STATE}/slice-${_slug}.status"
+  date +%s > "${ORCH_STATE}/slice-${_slug}.started"
+  register_child "$_pid"
   log "Slice ${_slug} started (PID: ${_pid})"
 }
 
@@ -361,7 +410,7 @@ check_slice_status() {
     return
   fi
 
-  _status="$(cat "$_status_file")"
+  _status="$(cat "$_status_file" | tr -d '[:space:]')"
   if [ "$_status" != "running" ]; then
     echo "$_status"
     return
@@ -369,11 +418,12 @@ check_slice_status() {
 
   # Check if PID is still running
   if [ -f "$_pid_file" ]; then
-    _pid="$(cat "$_pid_file")"
+    _pid="$(cat "$_pid_file" | tr -d '[:space:]')"
     if kill -0 "$_pid" 2>/dev/null; then
       echo "running"
     else
-      # Process ended — check exit code via worktree checkpoint
+      # Process ended — clean up stale PID file and check exit code
+      rm -f "$_pid_file"
       _wt_path="${WORKTREE_BASE}/${_slug}"
       _ckpt="${_wt_path}/.harness/state/pipeline/checkpoint.json"
       if [ -f "$_ckpt" ]; then
@@ -469,6 +519,11 @@ create_unified_pr() {
   _completed="$5"
 
   log "Creating unified PR: ${_int_branch} → ${_base_branch}..."
+
+  if ! command -v gh >/dev/null 2>&1; then
+    log_error "gh CLI not found — cannot create PR. Install gh and retry."
+    return 1
+  fi
 
   # Push integration branch
   git push -u origin "$_int_branch" 2>/dev/null || {
@@ -661,6 +716,7 @@ main() {
   _started="$(ts)"
   cat > "${ORCH_STATE}/orchestrator.json" <<ORCH_JSON
 {
+  "schema_version": 1,
   "plan": "${PLAN_FILE}",
   "started": "${_started}",
   "max_parallel": ${MAX_PARALLEL},
@@ -705,13 +761,13 @@ ORCH_JSON
 
       # Skip if already started or done (includes all terminal pipeline statuses)
       case "$_s_status" in
-        running|complete|failed|stuck|repair_limit|aborted|config_error|max_iterations|max_inner_cycles|max_outer_cycles) continue ;;
+        running|complete|failed|stuck|repair_limit|aborted|config_error|timeout|max_iterations|max_inner_cycles|max_outer_cycles) continue ;;
       esac
 
       # Check dependency satisfaction (avoid pipe-subshell by using temp file)
       _deps_met=1
       if [ -n "$d" ]; then
-        _deps_tmp="${ORCH_STATE}/.deps_check.tmp"
+        _deps_tmp="${ORCH_STATE}/.deps_check.$$.tmp"
         echo "$d" | tr ',' '\n' > "$_deps_tmp"
         while IFS= read -r dep; do
           _dep_slug="$(echo "$dep" | tr -d ' []' | tr '[:upper:]' '[:lower:]' | sed 's/^slice[- ]*//')"
@@ -720,11 +776,18 @@ ORCH_JSON
           # The dep field may use short names like "slice-1" while actual slugs
           # include a suffix like "1-ralph-tui". Match by prefix.
           _resolved_slug="$_dep_slug"
+          _match_count=0
           while IFS='|' read -r _rs _ro _rd _rf _rp; do
             case "$_rs" in
-              "${_dep_slug}"-*|"${_dep_slug}") _resolved_slug="$_rs"; break ;;
+              "${_dep_slug}"-*|"${_dep_slug}") _resolved_slug="$_rs"; _match_count=$((_match_count + 1)) ;;
             esac
           done < "$_slices_file"
+          if [ "$_match_count" -gt 1 ]; then
+            log "Warning: ambiguous dependency '${_dep_slug}' matched ${_match_count} slices, using '${_resolved_slug}'"
+          fi
+          if [ "$_resolved_slug" = "$_dep_slug" ] && [ "$_match_count" -eq 0 ]; then
+            log "Warning: dependency '${_dep_slug}' did not match any known slice"
+          fi
           _dep_status="$(check_slice_status "$_resolved_slug")"
           if [ "$_dep_status" != "complete" ]; then
             _deps_met=0
@@ -758,17 +821,36 @@ ORCH_JSON
       run_slice "$s" "$o" "$p"
     done < "$_slices_file"
 
-    # Update status counts and rebuild running_files from currently-running slices
+    # Update status counts, check timeouts, and rebuild running_files
     _completed=0
     _failed=0
     _running=0
     : > "${ORCH_STATE}/.running_files"
+    _now_epoch="$(date +%s)"
     while IFS='|' read -r _rf_s _rf_o _rf_d _rf_f _rf_p; do
       _rf_status="$(check_slice_status "$_rf_s")"
       case "$_rf_status" in
         complete)                        _completed=$((_completed + 1)) ;;
-        failed|stuck|repair_limit|aborted|config_error|max_iterations|max_inner_cycles|max_outer_cycles) _failed=$((_failed + 1)) ;;
+        failed|stuck|repair_limit|aborted|config_error|timeout|max_iterations|max_inner_cycles|max_outer_cycles) _failed=$((_failed + 1)) ;;
         running)
+          # Check for timeout
+          _started_file="${ORCH_STATE}/slice-${_rf_s}.started"
+          if [ -f "$_started_file" ]; then
+            _start_epoch="$(cat "$_started_file" | tr -d '[:space:]')"
+            _elapsed=$((_now_epoch - _start_epoch))
+            if [ "$_elapsed" -ge "$RALPH_SLICE_TIMEOUT" ]; then
+              log_error "Slice ${_rf_s} timed out after ${_elapsed}s (limit: ${RALPH_SLICE_TIMEOUT}s)"
+              _pid_file="${ORCH_STATE}/slice-${_rf_s}.pid"
+              if [ -f "$_pid_file" ]; then
+                _spid="$(cat "$_pid_file" | tr -d '[:space:]')"
+                kill "$_spid" 2>/dev/null || true
+                rm -f "$_pid_file"
+              fi
+              echo "timeout" > "${ORCH_STATE}/slice-${_rf_s}.status"
+              _failed=$((_failed + 1))
+              continue
+            fi
+          fi
           _running=$((_running + 1))
           # Re-add only currently running slice files to locklist
           echo "$_rf_f" | tr ',' '\n' >> "${ORCH_STATE}/.running_files"
