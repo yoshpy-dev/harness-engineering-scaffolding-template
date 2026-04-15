@@ -48,13 +48,13 @@ func TestActionsModel_HandleKey_NoSlice(t *testing.T) {
 
 func TestActionsModel_FailedSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	failedSlice := &state.SliceState{
+	failedSlice := state.SliceState{
 		Name:         "slice-1",
 		Status:       state.StatusFailed,
 		LogPath:      "/tmp/logs/slice-1.log",
 		WorktreePath: "/tmp/worktrees/slice-1",
 	}
-	m, _ = m.Update(ui.SliceSelectedMsg{Slice: *failedSlice})
+	m, _ = m.Update(ui.SliceSelectedMsg{Slice: failedSlice})
 
 	t.Run("retry available", func(t *testing.T) {
 		_, req, consumed := m.HandleKey(makeKeyPress("r"))
@@ -72,16 +72,13 @@ func TestActionsModel_FailedSliceActions(t *testing.T) {
 		}
 	})
 
-	t.Run("abort available", func(t *testing.T) {
+	t.Run("abort disabled for failed", func(t *testing.T) {
 		_, req, consumed := m.HandleKey(makeKeyPress("a"))
 		if !consumed {
 			t.Error("a should be consumed for failed slice")
 		}
-		if req == nil {
-			t.Fatal("expected confirmation request for abort")
-		}
-		if !strings.Contains(req.Tag, "abort:") {
-			t.Errorf("tag should start with abort:, got: %s", req.Tag)
+		if req != nil {
+			t.Error("abort should be disabled for failed slice (only running can abort)")
 		}
 	})
 
@@ -127,13 +124,13 @@ func TestActionsModel_FailedSliceActions(t *testing.T) {
 
 func TestActionsModel_RunningSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	runningSlice := &state.SliceState{
+	runningSlice := state.SliceState{
 		Name:         "slice-2",
 		Status:       state.StatusRunning,
 		LogPath:      "/tmp/logs/slice-2.log",
 		WorktreePath: "/tmp/worktrees/slice-2",
 	}
-	m, _ = m.Update(ui.SliceSelectedMsg{Slice: *runningSlice})
+	m, _ = m.Update(ui.SliceSelectedMsg{Slice: runningSlice})
 
 	t.Run("retry disabled for running", func(t *testing.T) {
 		_, req, consumed := m.HandleKey(makeKeyPress("r"))
@@ -158,13 +155,13 @@ func TestActionsModel_RunningSliceActions(t *testing.T) {
 
 func TestActionsModel_CompleteSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	completeSlice := &state.SliceState{
+	completeSlice := state.SliceState{
 		Name:         "slice-3",
 		Status:       state.StatusComplete,
 		LogPath:      "/tmp/logs/slice-3.log",
 		WorktreePath: "/tmp/worktrees/slice-3",
 	}
-	m, _ = m.Update(ui.SliceSelectedMsg{Slice: *completeSlice})
+	m, _ = m.Update(ui.SliceSelectedMsg{Slice: completeSlice})
 
 	t.Run("retry disabled for complete", func(t *testing.T) {
 		_, req, consumed := m.HandleKey(makeKeyPress("r"))
@@ -189,11 +186,11 @@ func TestActionsModel_CompleteSliceActions(t *testing.T) {
 
 func TestActionsModel_PendingSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	pendingSlice := &state.SliceState{
+	pendingSlice := state.SliceState{
 		Name:   "slice-4",
 		Status: state.StatusPending,
 	}
-	m, _ = m.Update(ui.SliceSelectedMsg{Slice: *pendingSlice})
+	m, _ = m.Update(ui.SliceSelectedMsg{Slice: pendingSlice})
 
 	t.Run("retry disabled for pending", func(t *testing.T) {
 		_, req, consumed := m.HandleKey(makeKeyPress("r"))
@@ -234,13 +231,13 @@ func TestActionsModel_PendingSliceActions(t *testing.T) {
 
 func TestActionsModel_StuckSliceActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	stuckSlice := &state.SliceState{
+	stuckSlice := state.SliceState{
 		Name:         "slice-5",
 		Status:       state.StatusStuck,
 		LogPath:      "/tmp/logs/slice-5.log",
 		WorktreePath: "/tmp/worktrees/slice-5",
 	}
-	m, _ = m.Update(ui.SliceSelectedMsg{Slice: *stuckSlice})
+	m, _ = m.Update(ui.SliceSelectedMsg{Slice: stuckSlice})
 
 	t.Run("retry available for stuck", func(t *testing.T) {
 		_, req, consumed := m.HandleKey(makeKeyPress("r"))
@@ -350,13 +347,13 @@ func TestActionsModel_ExecuteConfirmed(t *testing.T) {
 
 func TestActionsModel_View_StyledActions(t *testing.T) {
 	m := NewActionsModel(nil)
-	failedSlice := &state.SliceState{
+	failedSlice := state.SliceState{
 		Name:         "slice-1",
 		Status:       state.StatusFailed,
 		LogPath:      "/path/to/log",
 		WorktreePath: "/path/to/worktree",
 	}
-	m, _ = m.Update(ui.SliceSelectedMsg{Slice: *failedSlice})
+	m, _ = m.Update(ui.SliceSelectedMsg{Slice: failedSlice})
 	view := m.View()
 
 	// All action keys should be present

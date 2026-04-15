@@ -48,14 +48,18 @@ type SliceState struct {
 	Checkpoint   *PipelineCheckpoint `json:"checkpoint,omitempty"`
 }
 
-// CanRetry returns true if the slice is in a state that supports retry.
+// CanRetry returns true if the slice is in a retryable status.
 func (s *SliceState) CanRetry() bool {
-	return s.Status == StatusFailed || s.Status == StatusStuck
+	switch s.Status {
+	case StatusFailed, StatusStuck, StatusRepairLimit, StatusMaxRetries:
+		return true
+	}
+	return false
 }
 
-// CanAbort returns true if the slice is in a state that supports abort.
+// CanAbort returns true if the slice is in an abortable status.
 func (s *SliceState) CanAbort() bool {
-	return s.Status == StatusRunning || s.Status == StatusFailed || s.Status == StatusStuck
+	return s.Status == StatusRunning
 }
 
 // HasLogs returns true if the slice has a log path.
