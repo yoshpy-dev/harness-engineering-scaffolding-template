@@ -154,4 +154,7 @@
 - [x] Review artifact created (docs/reports/self-review-2026-04-16-fix-template-distribution-gaps.md)
 - [x] Verification artifact created (docs/reports/verify-2026-04-16-fix-template-distribution-gaps.md)
 - [x] Test artifact created (docs/reports/test-2026-04-16-fix-template-distribution-gaps.md)
+- [x] Codex triage artifact created (docs/reports/codex-triage-2026-04-16-fix-template-distribution-gaps.md)
+- [x] Codex WORTH_CONSIDERING fixes applied (7cd1bca)
+- [x] Pipeline re-run completed (self-review, verify, test, sync-docs — 57fe10e)
 - [ ] PR created
