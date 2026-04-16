@@ -52,7 +52,7 @@ The default philosophy here is:
 │   ├── ui/                 # Bubble Tea TUI components
 │   └── action/             # CLI action executor
 ├── templates/              # go:embed source for ralph init
-│   ├── base/               # Base scaffold (.claude/, AGENTS.md, etc.)
+│   ├── base/               # Base scaffold (.claude/, AGENTS.md, scripts/, etc.)
 │   ├── packs/              # Language packs
 │   └── prompts/            # Default pipeline prompt templates
 ├── docs/
