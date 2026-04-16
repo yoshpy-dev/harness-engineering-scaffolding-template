@@ -144,7 +144,7 @@
 - [x] Slice 3: quality-gates.md の修正 (62e8c76)
 - [x] Slice 4: upgrade.go のパーミッション修正 (d644bf1)
 - [x] Slice 5: テスト追加と検証 (097b506)
-- [ ] Review artifact created
-- [ ] Verification artifact created
-- [ ] Test artifact created
+- [x] Review artifact created (docs/reports/self-review-2026-04-16-fix-template-distribution-gaps.md)
+- [x] Verification artifact created (docs/reports/verify-2026-04-16-fix-template-distribution-gaps.md)
+- [x] Test artifact created (docs/reports/test-2026-04-16-fix-template-distribution-gaps.md)
 - [ ] PR created
