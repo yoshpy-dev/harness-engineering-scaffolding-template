@@ -63,6 +63,7 @@ Steps 4–9 run via subagents in 標準フロー. In Ralph Loop, they are handle
 - `.claude/skills/` — on-demand workflows
 - `.claude/agents/` — specialized subagents
 - `.claude/hooks/` — deterministic runtime checks
+  - `check_mojibake.sh` + `mojibake-allowlist` — temporary U+FFFD detection guard for Claude Code SSE mojibake (remove once upstream Issue #43746 ships)
 - `packs/languages/` — language-specific depth (also copied to `templates/packs/` for embedding)
 - `scripts/` — reusable verification and bootstrap scripts (includes legacy `ralph` shell CLI, `ralph-config.sh`, `ralph-pipeline.sh`, `ralph-orchestrator.sh`, `install.sh`)
 - `.harness/state/` — runtime state, not canonical truth
