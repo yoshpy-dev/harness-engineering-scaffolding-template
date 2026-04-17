@@ -48,9 +48,11 @@ make_payload() {
 }
 
 workdir="$(mktemp -d "${TMPDIR:-/tmp}/mojibake-test.XXXXXX")"
+# Scope all test state under $workdir so we do not stomp on the real
+# session's .harness/state/ markers. The Case E marker lives under
+# $alt_root (which is inside $workdir) and is removed with it.
 cleanup() {
   rm -rf "$workdir"
-  rm -f "$REPO_ROOT/.harness/state/mojibake-jq-missing"
 }
 trap cleanup EXIT
 

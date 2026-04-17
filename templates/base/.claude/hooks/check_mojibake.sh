@@ -18,6 +18,9 @@
 #   - If jq is missing, warn to stderr, write marker, and exit 0
 #     (fail-open-with-warning — we do not want to block every edit in
 #     minimal environments).
+#   - If the payload is malformed or has no .tool_input.file_path, exit 0
+#     (quiet no-op — Claude Code payloads without that field do not
+#     reference a writable file; nothing to scan).
 #   - If file does not exist, is empty, or has no U+FFFD, exit 0.
 #   - If the file matches a glob in .claude/hooks/mojibake-allowlist,
 #     exit 0 even when U+FFFD is present.
