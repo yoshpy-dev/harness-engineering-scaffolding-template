@@ -31,10 +31,8 @@ ROOT_ONLY_EXCLUSIONS=(
   "scripts/install.sh"
   "scripts/init-project.sh"
   "scripts/new-language-pack.sh"
-  # Sync and CI scripts (repo-specific quality gates)
+  # Sync check (only meaningful in the scaffold repo, not in scaffolded projects)
   "scripts/check-sync.sh"
-  "scripts/check-coverage.sh"
-  "scripts/check-pipeline-sync.sh"
   # CI workflows for this repo only
   ".github/workflows/check-template.yml"
   ".github/workflows/release.yml"
@@ -79,8 +77,6 @@ KNOWN_DIFFS=(
   "AGENTS.md"
   # verify.yml: root adds bootstrap, syntax checks, coverage, pipeline-sync
   ".github/workflows/verify.yml"
-  # quality-gates.md: root references repo-specific scripts
-  "docs/quality/quality-gates.md"
 )
 
 # ─── Helpers ──────────────────────────────────────────────────────────
