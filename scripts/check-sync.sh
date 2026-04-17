@@ -33,6 +33,10 @@ ROOT_ONLY_EXCLUSIONS=(
   "scripts/new-language-pack.sh"
   # Sync check (only meaningful in the scaffold repo, not in scaffolded projects)
   "scripts/check-sync.sh"
+  # Repo-local static/test runner (scaffolded projects write their own)
+  "scripts/verify.local.sh"
+  # Hook smoke tests (repo-specific; not part of scaffolded baseline)
+  "tests/"
   # CI workflows for this repo only
   ".github/workflows/check-template.yml"
   ".github/workflows/release.yml"
@@ -45,6 +49,7 @@ ROOT_ONLY_EXCLUSIONS=(
   "docs/architecture/repo-map.md"
   "docs/specs/"
   "docs/plans/README.md"
+  "docs/plans/active/"
   "docs/plans/archive/"
   "docs/tech-debt/README.md"
   "docs/references/source-notes.md"

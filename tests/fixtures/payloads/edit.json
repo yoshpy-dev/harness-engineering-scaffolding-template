@@ -1,0 +1,12 @@
+{
+  "session_id": "fixture-session",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "__FILE_PATH__",
+    "old_string": "hello",
+    "new_string": "world with escaped \"quotes\""
+  },
+  "tool_response": {
+    "success": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "session_id": "fixture-session",
+  "tool_name": "MultiEdit",
+  "tool_input": {
+    "file_path": "__FILE_PATH__",
+    "edits": [
+      {"old_string": "alpha", "new_string": "beta"},
+      {"old_string": "gamma", "new_string": "delta"}
+    ]
+  },
+  "tool_response": {
+    "success": true
+  }
+}

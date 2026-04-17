@@ -1,0 +1,11 @@
+{
+  "session_id": "fixture-session",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "__FILE_PATH__",
+    "content": "sample content"
+  },
+  "tool_response": {
+    "success": true
+  }
+}
