@@ -6,7 +6,8 @@
 - Triager: Claude Code (main context)
 - Self-review cross-ref: yes
 - Total Codex findings: 3
-- After triage: ACTION_REQUIRED=1, WORTH_CONSIDERING=1, DISMISSED=1
+- After triage (initial): ACTION_REQUIRED=1, WORTH_CONSIDERING=1, DISMISSED=1
+- After triage (re-review of 306b23a): ACTION_REQUIRED=1 new, WORTH_CONSIDERING=0, DISMISSED=0
 
 ## Triage context
 
@@ -35,3 +36,12 @@
 | 3 | [P1] `tests/test-check-mojibake.sh` Case E restricts PATH but does not link `dirname`; the hook's `HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"` supposedly exits 127 so the test should fail. | Empirically verified: `bash tests/test-check-mojibake.sh` PASSes 11/11 on the dev machine (macOS 15.3, bash 3.2). The test passes because (a) `HOOK_REPO_ROOT` override bypasses the `dirname`-dependent `REPO_ROOT` derivation in the hook, and (b) POSIX `set -e` does not propagate command-substitution failures to the outer shell, so an empty `HOOK_DIR` does not abort the script. The factual claim "fails on a normal writable machine" is not reproducible. For defense-in-depth we will still add `dirname` to the linked tool set, but this is hardening, not a fix. | false-positive |
 
 Categories: false-positive, already-addressed, style-preference, out-of-scope, context-aware-safe
+
+## Re-review triage after 306b23a
+
+### ACTION_REQUIRED (new)
+
+| # | Codex finding | Triage rationale | Affected file(s) |
+|---|---------------|------------------|-------------------|
+| 4 | [P3-new] Routing MultiEdit through `post_edit_verify.sh` exposes a pre-existing extraction bug: `extract_json_field "$payload" "file_path"` uses `jq -r '.["file_path"]'` (top-level only), but Claude Code's PostToolUse payload nests `file_path` under `tool_input`. With jq installed (the normal case), every Edit/Write/MultiEdit has `file_path=""`, so `edited-files.log` is never populated and the "run verify" reminder case-branch falls through. | Empirically verified: `printf '{"tool_input":{"file_path":"/tmp/x"}}' \| jq -r '.["file_path"] // empty'` → empty; nested path → `/tmp/x`. Also checked `.harness/state/edited-files.log` — does not exist locally, confirming the log was never written. This is a pre-existing bug that predates our PR, but by extending the matcher to MultiEdit we widen the silent-no-op scope. Fix is a small change in `lib_json.sh` + `post_edit_verify.sh` (both root + templates) to accept/use a dotted path (`tool_input.file_path`). The sed fallback already accidentally matches nested because it greps for the first `"file_path":"…"` occurrence. | `.claude/hooks/lib_json.sh`, `.claude/hooks/post_edit_verify.sh` (+ templates/base mirrors) |
+

@@ -5,7 +5,8 @@ HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$HOOK_DIR/lib_json.sh"
 
 payload="$(cat | tr '\n' ' ')"
-file_path="$(extract_json_field "$payload" "file_path")"
+# Claude Code PostToolUse payloads nest the target path under tool_input.
+file_path="$(extract_json_field "$payload" "tool_input.file_path")"
 
 mkdir -p .harness/state
 : > .harness/state/needs-verify
