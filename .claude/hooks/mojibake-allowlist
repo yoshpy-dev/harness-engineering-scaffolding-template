@@ -1,0 +1,15 @@
+# mojibake-allowlist — paths where U+FFFD detection is suppressed.
+#
+# One glob per line. Patterns are matched against the file path both
+# relative to the repo root and absolute. Shell glob syntax applies
+# (* and ?); ** is treated as *. Blank lines and # comments are ignored.
+#
+# Default entries protect the hook source itself and test fixtures from
+# self-detection loops. Add project-specific paths here if a file
+# legitimately contains U+FFFD (e.g. documentation about the issue).
+
+.claude/hooks/check_mojibake.sh
+tests/fixtures/**
+docs/plans/**/2026-04-17-mojibake-postedit-guard.md
+docs/plans/**/*mojibake*.md
+docs/reports/**/*mojibake*.md
