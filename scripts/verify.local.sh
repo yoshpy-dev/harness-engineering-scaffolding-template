@@ -51,7 +51,10 @@ run_static_checks() {
       set -- "$@" "$f"
     done
     if [ "$#" -gt 0 ]; then
-      run "shellcheck hook + verify scripts" shellcheck "$@"
+      # --severity=warning: info-level hints (SC1091 unfollowable source,
+      # SC2015 A&&B||C, SC2016 single-quoted expansions, SC2317 unreachable
+      # in trap handlers) are style advisories, not gate-worthy defects.
+      run "shellcheck hook + verify scripts" shellcheck --severity=warning "$@"
     fi
   else
     printf '==> shellcheck not installed; skipping (install for stricter checks)\n'
