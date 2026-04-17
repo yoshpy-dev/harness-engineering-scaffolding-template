@@ -1,6 +1,6 @@
 # allow-go-and-repo-commands
 
-- Status: Draft (revised after Codex advisory)
+- Status: In review (post-implementation pipeline)
 - Owner: Claude Code
 - Date: 2026-04-17
 - Related request: goコマンドなどや自作コマンドなど、このリポジトリのプログラム実行で必要なものをすべてsettings.jsonでallowする
@@ -179,7 +179,7 @@
 - [x] Plan reviewed
 - [x] Branch created
 - [x] Implementation started
-- [ ] Review artifact created
-- [ ] Verification artifact created
-- [ ] Test artifact created
+- [x] Review artifact created (`docs/reports/self-review-2026-04-17-allow-go-and-repo-commands.md`)
+- [x] Verification artifact created (`docs/reports/verify-2026-04-17-allow-go-and-repo-commands.md`)
+- [x] Test artifact created (`docs/reports/test-2026-04-17-allow-go-and-repo-commands.md`)
 - [ ] PR created
