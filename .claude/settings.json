@@ -101,11 +101,15 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
             "command": "./.claude/hooks/post_edit_verify.sh"
+          },
+          {
+            "type": "command",
+            "command": "./.claude/hooks/check_mojibake.sh"
           }
         ]
       }
